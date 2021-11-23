@@ -7,6 +7,8 @@ public class Manipulator {
     private DcMotor clawLeft;
     private DcMotor clawRight;
     private ArmPosition armState;
+    public static final double ARM_UP_SPEED = 0.6;
+    public static final double ARM_DOWN_SPEED = 0.3;
 
     public Manipulator(DcMotor armLift, DcMotor clawLeft, DcMotor clawRight) {
         this.armLift = armLift;
@@ -40,9 +42,23 @@ public class Manipulator {
         clawRight.setPower(-power);
     }
 
-    public void moveArmToPosition(ArmPosition armPosition) {
-        moveArmToPosition(armPosition, 0.6);
+    public ArmPosition getArmState() {
+        return armState;
     }
+
+    public void moveArmToPosition(ArmPosition armPosition) {
+        int compare = armPosition.compareTo(armState);
+
+        if (compare > 0) { // arm position > armState
+            moveArmToPosition(armPosition, ARM_UP_SPEED);
+        } else if (compare < 0) { // arm position < armState
+            moveArmToPosition(armPosition, ARM_DOWN_SPEED);
+        } else { // arm position == armState
+            moveArmToPosition(armPosition, ARM_DOWN_SPEED);
+        }
+
+    }
+
     public void moveArmToPosition(ArmPosition armPosition, double power) {
         armState = armPosition;
         switch (armState) {
@@ -55,11 +71,11 @@ public class Manipulator {
             case MIDDLE:
                 armLift.setTargetPosition(-650);
                 break;
-            case TOP:
-                armLift.setTargetPosition(-915);
-                break;
             case DUCK:
                 armLift.setTargetPosition(-750);
+                break;
+            case TOP:
+                armLift.setTargetPosition(-915);
                 break;
             default:
                 armLift.setTargetPosition(armLift.getCurrentPosition());
@@ -76,7 +92,7 @@ public class Manipulator {
         GROUND,
         BOTTOM,
         MIDDLE,
-        TOP,
-        DUCK
+        DUCK,
+        TOP
     }
 }
