@@ -1,6 +1,9 @@
 ## NOTICE
 
 **This repository is for team 12886 The LaGrange Points**  
+Notes:
+ - Use batch sensor read
+
 The following is the original README.md file:  
 
 This repository contains the public FTC SDK for the Freight Frenzy (2021-2022) competition season. 
