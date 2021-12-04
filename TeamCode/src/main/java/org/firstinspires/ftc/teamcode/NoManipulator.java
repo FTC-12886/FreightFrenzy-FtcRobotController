@@ -53,9 +53,9 @@ import java.util.List;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Abstracted Teleop", group="Iterative Opmode")
+@TeleOp(name="No Manipulator Teleop", group="Iterative Opmode")
 
-public class AbstractedTeleOp extends OpMode
+public class NoManipulator extends OpMode
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -84,10 +84,7 @@ public class AbstractedTeleOp extends OpMode
         frontRightDrive  = hardwareMap.get(DcMotor.class, "front_right_drive");
         frontLeftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
 
-        manipulator = new Manipulator(
-                hardwareMap.get(DcMotor.class, "armLift"),
-                hardwareMap.get(DcMotor.class, "clawLeft"),
-                hardwareMap.get(DcMotor.class, "clawRight"));
+
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
@@ -95,7 +92,6 @@ public class AbstractedTeleOp extends OpMode
         rearLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
         frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
-
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
     }
@@ -138,47 +134,10 @@ public class AbstractedTeleOp extends OpMode
         rearRightDrive.setPower(rightPower);
         frontLeftDrive.setPower(leftPower);
         frontRightDrive.setPower(rightPower);
-
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
-        telemetry.addData("arm pos", manipulator.getArmEncoder());
 
-        // both bumpers = duck mode
-        if (gamepad1.left_bumper && gamepad1.right_bumper) {
-            manipulator.runDuckMode(false);
-        } else if (gamepad1.right_bumper){
-            manipulator.runIntake(false);
-        } else if (gamepad1.left_bumper) {
-            manipulator.runIntake(true);
-        } else {
-            manipulator.runIntake(0);
-        }
-
-        switch (getGamepadButtons(gamepad1)) {
-            case 'a':
-                telemetry.addData("button", "a");
-                manipulator.moveArmToPosition(Manipulator.ArmPosition.GROUND);
-                break;
-            case 'b':
-                telemetry.addData("button", "b");
-                manipulator.moveArmToPosition(Manipulator.ArmPosition.BOTTOM);
-                break;
-            case 'y':
-                telemetry.addData("button", "y");
-                manipulator.moveArmToPosition(Manipulator.ArmPosition.MIDDLE);
-                break;
-            case 'x':
-                telemetry.addData("button", "x");
-                manipulator.moveArmToPosition(Manipulator.ArmPosition.TOP);
-                break;
-        }
-        // SHARED SHIPPING HUB TIPPED - 20 pt!!!!!
-
-        // switch (getGamepadButtons(gamepad1)
-        // level 1 = -230
-        // level 2 = -480
-        // level 3 = -780
     }
 
     /*
@@ -186,19 +145,6 @@ public class AbstractedTeleOp extends OpMode
      */
     @Override
     public void stop() {
-    }
-
-    private char getGamepadButtons(Gamepad gamepad) {
-        if (gamepad.a) {
-            return 'a';
-        } else if (gamepad.b) {
-            return 'b';
-        } else if (gamepad.x) {
-            return 'x';
-        } else if (gamepad.y) {
-            return 'y';
-        } else
-            return '\u0000';
     }
 
 }
