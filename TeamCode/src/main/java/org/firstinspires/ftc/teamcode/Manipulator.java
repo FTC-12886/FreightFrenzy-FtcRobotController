@@ -62,9 +62,12 @@ public class Manipulator {
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         if (armState == ArmPosition.GROUND)
-            new Thread(() -> { // spawn new thread to wait until done moving and reset encoder
-                while (armLift.isBusy());
-                armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (armLift.isBusy());
+                    armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                }
             }).start();
     }
 
