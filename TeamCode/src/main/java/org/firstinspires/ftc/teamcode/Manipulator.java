@@ -47,52 +47,43 @@ public class Manipulator {
     }
 
     public void moveArmToPosition(ArmPosition armPosition) {
-        int compare = armPosition.compareTo(armState);
-
-        if (compare > 0) { // arm position > armState
+        boolean up = armPosition.getEncoderTicks() > armState.getEncoderTicks();
+        if (up)
             moveArmToPosition(armPosition, ARM_UP_SPEED);
-        } else if (compare < 0) { // arm position < armState
+        else
             moveArmToPosition(armPosition, ARM_DOWN_SPEED);
-        } else { // arm position == armState
-            moveArmToPosition(armPosition, ARM_DOWN_SPEED);
-        }
-
     }
 
     public void moveArmToPosition(ArmPosition armPosition, double power) {
         armState = armPosition;
-        switch (armState) {
-            case GROUND:
-                armLift.setTargetPosition(-30); // TODO Use limit switch instead
-                break;
-            case BOTTOM:
-                armLift.setTargetPosition(-300);
-                break;
-            case MIDDLE:
-                armLift.setTargetPosition(-650);
-                break;
-            case DUCK:
-                armLift.setTargetPosition(-750);
-                break;
-            case TOP:
-                armLift.setTargetPosition(-915);
-                break;
-            default:
-                armLift.setTargetPosition(armLift.getCurrentPosition());
-                break;
-        }
 
-        armLift.setPower(power);
+        armLift.setTargetPosition(armState.getEncoderTicks());
+        armLift.setPower(power); // should we use set power or set velocity?
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
+        if (armState == ArmPosition.GROUND)
+            new Thread(() -> { // spawn new thread to wait until done moving and reset encoder
+                while (armLift.isBusy());
+                armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            }).start();
     }
 
 
     public enum ArmPosition {
-        GROUND,
-        BOTTOM,
-        MIDDLE,
-        DUCK,
-        TOP
+        GROUND (-30),
+        BOTTOM (-300),
+        MIDDLE (-650),
+        DUCK (-750),
+        TOP (-915);
+
+        private final int encoderTicks;
+
+        ArmPosition(int encoderTicks) {
+            this.encoderTicks = encoderTicks;
+        }
+
+        public int getEncoderTicks() {
+            return encoderTicks;
+        }
     }
 }
