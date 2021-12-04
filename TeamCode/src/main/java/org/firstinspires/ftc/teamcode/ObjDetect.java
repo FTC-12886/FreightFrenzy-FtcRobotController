@@ -34,6 +34,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import java.util.List;
+import java.util.Locale;
+
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection;
@@ -136,12 +138,20 @@ public class ObjDetect extends LinearOpMode{
                         // step through the list of recognitions and display boundary info.
                         int i = 0;
                         for (Recognition recognition : updatedRecognitions) {
-                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                            telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                            telemetry.addData(String.format(new Locale("en", "US"),
+                                    "label (%d)", i), recognition.getLabel());
+                            telemetry.addData(String.format(new Locale("en", "US"),
+                                    "  left,top (%d)", i), "%.03f , %.03f",
                                     recognition.getLeft(), recognition.getTop());
-                            telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                            telemetry.addData(String.format(new Locale("en", "US"),
+                                    "  right,bottom (%d)", i), "%.03f , %.03f",
                                     recognition.getRight(), recognition.getBottom());
                             i++;
+                            double x = ((recognition.getRight() + recognition.getLeft())/2)/ recognition.getImageWidth();
+                            double y = ((recognition.getTop() + recognition.getBottom())/2)/ recognition.getImageHeight();
+                            telemetry.addData(String.format(new Locale("en", "US"),
+                                    "  x,y (%d)", i), "%.03f , %.03f",
+                                    x, y);
                         }
                         telemetry.update();
                     }
