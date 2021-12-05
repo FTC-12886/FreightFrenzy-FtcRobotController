@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
@@ -53,7 +54,7 @@ import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
  * is explained below.
  */
 
-@Autonomous(name="Object Detect Test")
+@Autonomous(name="On bot Object Detect Test")
 public class ObjDetect extends LinearOpMode{
     /* Note: This sample uses the all-objects Tensor Flow model (FreightFrenzy_BCDM.tflite), which contains
      * the following 4 detectable objects
@@ -118,7 +119,7 @@ public class ObjDetect extends LinearOpMode{
             // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
             // should be set to the value of the images used to create the TensorFlow Object Detection model
             // (typically 16/9).
-            tfod.setZoom(2.5, 4.0/3.0);
+            tfod.setZoom(1, 4.0/3.0);
         }
 
         /** Wait for the game to begin */
@@ -146,12 +147,26 @@ public class ObjDetect extends LinearOpMode{
                             telemetry.addData(String.format(new Locale("en", "US"),
                                     "  right,bottom (%d)", i), "%.03f , %.03f",
                                     recognition.getRight(), recognition.getBottom());
-                            i++;
+
                             double x = ((recognition.getRight() + recognition.getLeft())/2)/ recognition.getImageWidth();
                             double y = ((recognition.getTop() + recognition.getBottom())/2)/ recognition.getImageHeight();
                             telemetry.addData(String.format(new Locale("en", "US"),
                                     "  x,y (%d)", i), "%.03f , %.03f",
                                     x, y);
+                            if (x < 0.33) {
+                                telemetry.addData("   side","left");
+                            } else if (x < 0.66) {
+                                telemetry.addData("   side", "middle");
+                            } else {
+                                telemetry.addData("   side", "right");
+                            }
+                            if ((recognition.getRight() - recognition.getLeft())/recognition.getImageWidth() > 0.25 ||
+                                    (recognition.getBottom() - recognition.getTop())/recognition.getImageHeight() > 0.5) {
+                                telemetry.addData("   ignore", "true");
+                            } else {
+                                telemetry.addData("   ignore", "false");
+                            }
+                            i++;
                         }
                         telemetry.update();
                     }
@@ -170,7 +185,8 @@ public class ObjDetect extends LinearOpMode{
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection = CameraDirection.BACK;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+        //parameters.cameraDirection = CameraDirection.BACK;
 
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
