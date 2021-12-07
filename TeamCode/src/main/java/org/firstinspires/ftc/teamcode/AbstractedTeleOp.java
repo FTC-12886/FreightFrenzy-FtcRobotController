@@ -32,7 +32,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -59,10 +59,7 @@ public class AbstractedTeleOp extends OpMode
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor rearRightDrive = null;
-    private DcMotor rearLeftDrive = null;
-    private DcMotor frontRightDrive = null;
-    private DcMotor frontLeftDrive = null;
+    private DriveTrain driveTrain;
     private Manipulator manipulator;
     /*
      * Code to run ONCE when the driver hits INIT
@@ -79,22 +76,17 @@ public class AbstractedTeleOp extends OpMode
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        rearRightDrive  = hardwareMap.get(DcMotor.class, "rear_right_drive");
-        rearLeftDrive = hardwareMap.get(DcMotor.class, "rear_left_drive");
-        frontRightDrive  = hardwareMap.get(DcMotor.class, "front_right_drive");
-        frontLeftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
+
+        driveTrain = new DriveTrain(
+                hardwareMap.get(DcMotorEx.class, "front_left_drive"),
+                hardwareMap.get(DcMotorEx.class, "front_right_drive"),
+                hardwareMap.get(DcMotorEx.class, "rear_left_drive"),
+                hardwareMap.get(DcMotorEx.class, "rear_right_drive")).init();
 
         manipulator = new Manipulator(
-                hardwareMap.get(DcMotor.class, "armLift"),
-                hardwareMap.get(DcMotor.class, "clawLeft"),
-                hardwareMap.get(DcMotor.class, "clawRight"));
-
-        // Most robots need the motor on one side to be reversed to drive forward
-        // Reverse the motor that runs backwards when connected directly to the battery
-        rearRightDrive.setDirection(DcMotor.Direction.FORWARD);
-        rearLeftDrive.setDirection(DcMotor.Direction.REVERSE);
-        frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
-        frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
+                hardwareMap.get(DcMotorEx.class, "armLift"),
+                hardwareMap.get(DcMotorEx.class, "clawLeft"),
+                hardwareMap.get(DcMotorEx.class, "clawRight"));
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -134,10 +126,7 @@ public class AbstractedTeleOp extends OpMode
         rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
 
         // Send calculated power to wheels
-        rearLeftDrive.setPower(leftPower);
-        rearRightDrive.setPower(rightPower);
-        frontLeftDrive.setPower(leftPower);
-        frontRightDrive.setPower(rightPower);
+        driveTrain.setPower(leftPower, rightPower, leftPower, rightPower);
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
