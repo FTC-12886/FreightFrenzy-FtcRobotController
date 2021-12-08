@@ -11,14 +11,9 @@ public class DriveTrain {
     private DcMotorEx rearLeftDrive;
     private DcMotorEx rearRightDrive;
 
-    private int count;
-    private double lastError;
-    private double integral;
-
     public static final double ANGLE_TOLERANCE = 1;
     public static final double DISTANCE_TOLERANCE = 2.0;
     public static final double ENCODER_TOLERANCE = 15;
-
 
     /**
      * Parametrized constructor for drive train, takes in the motors
@@ -74,15 +69,6 @@ public class DriveTrain {
      */
     public double[] getEncoderValues() {
         return new double[]{frontLeftDrive.getCurrentPosition(), frontRightDrive.getCurrentPosition(), rearLeftDrive.getCurrentPosition(), rearRightDrive.getCurrentPosition()};
-    }
-
-    /**
-     * Resets PID variables
-     */
-    private void resetPID() {
-        count = 0;
-        lastError = 0;
-        integral = 0;
     }
 
     /**
@@ -165,7 +151,6 @@ public class DriveTrain {
 
         if (Math.abs(pidfController.getError()) < DISTANCE_TOLERANCE) {
             brake();
-            resetPID();
             return true;
         }
 
@@ -236,7 +221,6 @@ public class DriveTrain {
 
         if (Math.abs(pidfController.getError()) < ENCODER_TOLERANCE) {
             brake();
-            resetPID();
             return true;
         }
         double output = pidfController.calculate(targetPosition, currentPosition);
@@ -273,7 +257,6 @@ public class DriveTrain {
 
         if (Math.abs(distancePidfController.getError()) < ENCODER_TOLERANCE) {
             brake();
-            resetPID();
             return true;
         }
         double correctionPower = distancePidfController.calculate(targetPosition, currentPosition);
@@ -315,20 +298,18 @@ public class DriveTrain {
         // calculate how far we are from the target angle
 
 
-        if (Math.abs(error) < ANGLE_TOLERANCE) {
+        if (Math.abs(pidfController.getError()) < ANGLE_TOLERANCE) {
             brake();
-            resetPID();
             return true;
         }
 
         // calculate the turn power
-        double turnPower = ((KP * error) + (KI * (integral / count)) + KD * (error - lastError)) * power;
+        double turnPower = pidfController.calculate(target, current);
 
         // set the motor powers
         turn(axis, turnPower);
 
         // save the error for the next iteration
-        lastError = error;
 
         return false;
     }
