@@ -54,7 +54,7 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
  * or add a @Disabled annotation to prevent this OpMode from being added to the Driver Station
  */
 @TeleOp
-
+@Disabled
 public class NewMan extends OpMode {
     // CONFIGURATION
 
