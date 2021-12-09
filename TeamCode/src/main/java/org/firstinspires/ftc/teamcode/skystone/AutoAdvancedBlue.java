@@ -23,6 +23,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.android.AndroidGyroscope;
+
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.Servo;
 import java.text.DecimalFormat;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -53,7 +55,7 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
  * or add a @Disabled annotation to prevent this OpMode from being added to the Driver Station
  */
 @Autonomous
-
+@Disabled
 public class AutoAdvancedBlue extends OpMode {
     // CONFIGURATION
 
