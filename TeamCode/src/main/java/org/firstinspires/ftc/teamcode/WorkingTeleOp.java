@@ -53,9 +53,9 @@ import java.util.List;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Abstracted Teleop", group="Iterative Opmode")
+@TeleOp(name="wroking Teleop", group="Iterative Opmode")
 
-public class AbstractedTeleOp extends OpMode
+public class WorkingTeleOp extends OpMode
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -63,6 +63,9 @@ public class AbstractedTeleOp extends OpMode
     private DcMotor rearLeftDrive = null;
     private DcMotor frontRightDrive = null;
     private DcMotor frontLeftDrive = null;
+    private DcMotor armLift;
+    private DcMotor clawLeft;
+    private DcMotor clawRight;
     private Manipulator manipulator;
     /*
      * Code to run ONCE when the driver hits INIT
@@ -84,10 +87,11 @@ public class AbstractedTeleOp extends OpMode
         frontRightDrive  = hardwareMap.get(DcMotor.class, "front_right_drive");
         frontLeftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
 
-        manipulator = new Manipulator(
-                hardwareMap.get(DcMotor.class, "arm_lift"),
-                hardwareMap.get(DcMotor.class, "claw_left"),
-                hardwareMap.get(DcMotor.class, "claw_right"));
+        armLift = hardwareMap.get(DcMotor.class, "arm_lift");
+        clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
+        clawRight = hardwareMap.get(DcMotor.class, "claw_right");
+        armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armLift.setDirection(DcMotor.Direction.FORWARD);
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
@@ -123,6 +127,8 @@ public class AbstractedTeleOp extends OpMode
         // Setup a variable for each drive wheel to save power level for telemetry
         double leftPower;
         double rightPower;
+        double clawRightPower;
+        double clawLeftPower;
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // - This uses basic math to combine motions and is easier to drive straight.
@@ -140,37 +146,42 @@ public class AbstractedTeleOp extends OpMode
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
-        telemetry.addData("arm pos", manipulator.getArmEncoder());
+        telemetry.addData("arm pos", armLift.getCurrentPosition());
 
         // both bumpers = duck mode
         if (gamepad1.left_bumper && gamepad1.right_bumper) {
-            manipulator.runDuckMode(false);
+            //manipulator.runDuckMode(false);
         } else if (gamepad1.right_bumper){
-            manipulator.runIntake(false);
+            //manipulator.runIntake(false);
         } else if (gamepad1.left_bumper) {
-            manipulator.runIntake(true);
+            //manipulator.runIntake(true);
         } else {
-            manipulator.runIntake(0);
+            //manipulator.runIntake(0);
         }
 
         switch (getGamepadButtons(gamepad1)) {
             case 'a':
                 telemetry.addData("button", "a");
-                manipulator.moveArmToPosition(Manipulator.ArmPosition.GROUND);
+                armLift.setTargetPosition(-30);
                 break;
             case 'b':
                 telemetry.addData("button", "b");
-                manipulator.moveArmToPosition(Manipulator.ArmPosition.BOTTOM);
+                armLift.setTargetPosition(-300);
                 break;
             case 'y':
                 telemetry.addData("button", "y");
-                manipulator.moveArmToPosition(Manipulator.ArmPosition.MIDDLE);
+                armLift.setTargetPosition(-650);
                 break;
             case 'x':
                 telemetry.addData("button", "x");
-                manipulator.moveArmToPosition(Manipulator.ArmPosition.TOP);
+                armLift.setTargetPosition(-915);
+                break;
+            default:
+                armLift.setTargetPosition(armLift.getCurrentPosition());
                 break;
         }
+        armLift.setPower(0.6);
+        armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         // SHARED SHIPPING HUB TIPPED - 20 pt!!!!!
 
         // switch (getGamepadButtons(gamepad1)

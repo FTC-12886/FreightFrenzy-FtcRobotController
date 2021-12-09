@@ -6,7 +6,7 @@ public class Manipulator {
     private DcMotor armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
-    private ArmPosition armState;
+    private ArmPosition armState = ArmPosition.GROUND;
     public static final double ARM_UP_SPEED = 0.6;
     public static final double ARM_DOWN_SPEED = 0.3;
 
