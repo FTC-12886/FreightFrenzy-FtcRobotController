@@ -29,16 +29,22 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import java.util.List;
+import java.util.Locale;
+
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 /**
  * This 2020-2021 OpMode illustrates the basics of using the TensorFlow Object Detection API to
@@ -51,7 +57,7 @@ import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
  * is explained below.
  */
 
-@Autonomous(name="Object Detect Test")
+@Autonomous(name="On bot Object Detect Test")
 public class ObjDetect extends LinearOpMode{
     /* Note: This sample uses the all-objects Tensor Flow model (FreightFrenzy_BCDM.tflite), which contains
      * the following 4 detectable objects
@@ -64,7 +70,8 @@ public class ObjDetect extends LinearOpMode{
      *  FreightFrenzy_BC.tflite  0: Ball,  1: Cube
      *  FreightFrenzy_DM.tflite  0: Duck,  1: Marker
      */
-    private static final String TFOD_MODEL_ASSET = "TeamModel.tflite";
+    private static MultipleTelemetry multiTelemetry;
+    private static final String TFOD_MODEL_FILE = AppUtil.FIRST_FOLDER + "/tflitemodels/TeamElement.tflite";
     private static final String[] LABELS = {
             "Team"
     };
@@ -98,6 +105,7 @@ public class ObjDetect extends LinearOpMode{
 
     @Override
     public void runOpMode() {
+        multiTelemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
         initVuforia();
@@ -116,12 +124,12 @@ public class ObjDetect extends LinearOpMode{
             // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
             // should be set to the value of the images used to create the TensorFlow Object Detection model
             // (typically 16/9).
-            tfod.setZoom(2.5, 4.0/3.0);
+            tfod.setZoom(1, 4.0/3.0);
         }
 
         /** Wait for the game to begin */
-        telemetry.addData(">", "Press Play to start op mode");
-        telemetry.update();
+        multiTelemetry.addData(">", "Press Play to start op mode");
+        multiTelemetry.update();
         waitForStart();
 
         if (opModeIsActive()) {
@@ -131,19 +139,41 @@ public class ObjDetect extends LinearOpMode{
                     // the last time that call was made.
                     List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
                     if (updatedRecognitions != null) {
-                        telemetry.addData("# Object Detected", updatedRecognitions.size());
+                        multiTelemetry.addData("# Object Detected", updatedRecognitions.size());
 
                         // step through the list of recognitions and display boundary info.
                         int i = 0;
                         for (Recognition recognition : updatedRecognitions) {
-                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                            telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                            multiTelemetry.addData(String.format(new Locale("en", "US"),
+                                    "label (%d)", i), recognition.getLabel());
+                            multiTelemetry.addData(String.format(new Locale("en", "US"),
+                                    "  left,top (%d)", i), "%.03f , %.03f",
                                     recognition.getLeft(), recognition.getTop());
-                            telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                            multiTelemetry.addData(String.format(new Locale("en", "US"),
+                                    "  right,bottom (%d)", i), "%.03f , %.03f",
                                     recognition.getRight(), recognition.getBottom());
+
+                            double x = ((recognition.getRight() + recognition.getLeft())/2)/ recognition.getImageWidth();
+                            double y = ((recognition.getTop() + recognition.getBottom())/2)/ recognition.getImageHeight();
+                            multiTelemetry.addData(String.format(new Locale("en", "US"),
+                                    "  x,y (%d)", i), "%.03f , %.03f",
+                                    x, y);
+                            if (x < 0.33) {
+                                multiTelemetry.addData("   side","left");
+                            } else if (x < 0.66) {
+                                multiTelemetry.addData("   side", "middle");
+                            } else {
+                                multiTelemetry.addData("   side", "right");
+                            }
+                            if ((recognition.getRight() - recognition.getLeft())/recognition.getImageWidth() > 0.25 ||
+                                    (recognition.getBottom() - recognition.getTop())/recognition.getImageHeight() > 0.5) {
+                                multiTelemetry.addData("   ignore", "true");
+                            } else {
+                                multiTelemetry.addData("   ignore", "false");
+                            }
                             i++;
                         }
-                        telemetry.update();
+                        multiTelemetry.update();
                     }
                 }
             }
@@ -160,11 +190,12 @@ public class ObjDetect extends LinearOpMode{
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection = CameraDirection.BACK;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+        //parameters.cameraDirection = CameraDirection.BACK;
 
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
-
+        FtcDashboard.getInstance().startCameraStream(vuforia, 0);
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
     }
 
@@ -179,6 +210,6 @@ public class ObjDetect extends LinearOpMode{
         tfodParameters.isModelTensorFlow2 = true;
         tfodParameters.inputSize = 320;
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
+        tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
     }
 }
