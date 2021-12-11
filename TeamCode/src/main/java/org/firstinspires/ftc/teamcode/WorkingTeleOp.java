@@ -176,9 +176,6 @@ public class WorkingTeleOp extends OpMode
                 telemetry.addData("button", "x");
                 armLift.setTargetPosition(-915);
                 break;
-            default:
-                armLift.setTargetPosition(armLift.getCurrentPosition());
-                break;
         }
         armLift.setPower(0.6);
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
