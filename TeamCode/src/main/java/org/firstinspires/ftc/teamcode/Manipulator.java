@@ -98,7 +98,7 @@ public class Manipulator {
         if (armState == ArmPosition.UNKNOWN) {
             moveArmToPosition(armPosition, DEFAULT_SPEED);
         } else {
-            boolean up = armPosition.getEncoderTicks() > armState.getEncoderTicks();
+            boolean up = armPosition.getEncoderTicks() < armState.getEncoderTicks();
             if (up)
                 moveArmToPosition(armPosition, ARM_UP_SPEED);
             else
@@ -108,10 +108,14 @@ public class Manipulator {
 
     /**
      * Moves the arm to specified position.
+     * Reset encoder if new position is ground.
      * @param armPosition position to move to
      * @param power power to move at
      */
     public void moveArmToPosition(ArmPosition armPosition, double power) {
+        if (armPosition == ArmPosition.UNKNOWN) {
+            return;
+        }
         armState = armPosition;
 
         armLift.setTargetPosition(armState.getEncoderTicks());

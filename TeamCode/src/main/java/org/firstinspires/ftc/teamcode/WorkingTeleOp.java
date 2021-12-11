@@ -94,7 +94,7 @@ public class WorkingTeleOp extends OpMode
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setDirection(DcMotor.Direction.FORWARD);
-        armLift.setTargetPosition(0);
+        armLift.setTargetPosition(-300);
         clawRight.setDirection(DcMotor.Direction.REVERSE);
         clawLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         clawRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -160,25 +160,24 @@ public class WorkingTeleOp extends OpMode
             clawRight.setPower(-gamepad1.right_trigger);
             armLift.setTargetPosition(-700);
         } else if (gamepad1.right_trigger > 0.0){
-            clawLeft.setPower(-gamepad1.right_trigger);
-            clawRight.setPower(-gamepad1.right_trigger);
-        } else if (gamepad1.left_trigger > 0.0) { // intake goes to ground also
-            clawLeft.setPower(gamepad1.left_trigger);
-            clawRight.setPower(gamepad1.left_trigger);
-            armLift.setTargetPosition(-30);
-            armLift.setPower(0.6);
+            // negative is in
+            clawLeft.setPower(gamepad1.right_trigger);
+            clawRight.setPower(gamepad1.right_trigger);
+        } else if (gamepad1.left_trigger > 0.0) { // left is in
+            clawLeft.setPower(-gamepad1.left_trigger);
+            clawRight.setPower(-gamepad1.left_trigger);
         } else {
             clawLeft.setPower(0);
             clawRight.setPower(0);
         }
 
+        armLift.setPower(0.3);
         switch (getGamepadButtons(gamepad1)) {
             case 'a':
                 telemetry.addData("button", "a");
                 armLift.setTargetPosition(-30);
                 armLift.setPower(0.3);
                 break;
-            default: // fall through on purpose
             case 'b':
                 telemetry.addData("button", "b");
                 armLift.setTargetPosition(-300);

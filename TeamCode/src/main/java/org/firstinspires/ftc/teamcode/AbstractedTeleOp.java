@@ -112,7 +112,9 @@ public class AbstractedTeleOp extends OpMode
      */
     @Override
     public void start() {
+
         runtime.reset();
+        manipulator.moveArmToPosition(Manipulator.ArmPosition.BOTTOM);
     }
 
     /*
@@ -150,7 +152,6 @@ public class AbstractedTeleOp extends OpMode
             manipulator.runIntake(false);
         } else if (gamepad1.right_bumper) {
             manipulator.runIntake(true);
-            manipulator.moveArmToPosition(Manipulator.ArmPosition.GROUND);
         } else {
             manipulator.runIntake(0);
         }
@@ -160,7 +161,6 @@ public class AbstractedTeleOp extends OpMode
                 telemetry.addData("button", "a");
                 manipulator.moveArmToPosition(Manipulator.ArmPosition.GROUND);
                 break;
-            default: // fall through on purpose
             case 'b':
                 telemetry.addData("button", "b");
                 manipulator.moveArmToPosition(Manipulator.ArmPosition.BOTTOM);
@@ -184,12 +184,6 @@ public class AbstractedTeleOp extends OpMode
 
 
         }
-        // SHARED SHIPPING HUB TIPPED - 20 pt!!!!!
-
-        // switch (getGamepadButtons(gamepad1)
-        // level 1 = -230
-        // level 2 = -480
-        // level 3 = -780
     }
 
     /*
