@@ -1,7 +1,7 @@
 ## TeamCode Module
 
-BasicTeleOp - not used
-WorkingTeleOp - everything inline, no abstraction, "dumb code"
+BasicTeleOp - not used  
+WorkingTeleOp - everything inline, no abstraction, "dumb code"  
 AbstractedTeleOp - abstracted code, uses Manipulator class
 
 Welcome!
