@@ -1,5 +1,9 @@
 ## TeamCode Module
 
+BasicTeleOp - not used
+WorkingTeleOp - everything inline, no abstraction, "dumb code"
+AbstractedTeleOp - abstracted code, uses Manipulator class
+
 Welcome!
 
 This module, TeamCode, is the place where you will write/paste the code for your team's
