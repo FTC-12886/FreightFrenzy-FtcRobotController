@@ -27,9 +27,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.test;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -45,6 +46,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.Came
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.R;
 
 /**
  * This 2020-2021 OpMode illustrates the basics of using the TensorFlow Object Detection API to
@@ -57,8 +59,13 @@ import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
  * is explained below.
  */
 
-@Autonomous(name="On bot Object Detect Test")
+@Config
+@Autonomous
 public class ObjDetect extends LinearOpMode{
+    public static double RIGHT_BOUNDARY = 0.66;
+    public static double LEFT_BOUNDARY = 0.33;
+    public static double WIDTH_IGNORE = 0.25;
+    public static double HEIGHT_IGNORE = 0.5;
     /* Note: This sample uses the all-objects Tensor Flow model (FreightFrenzy_BCDM.tflite), which contains
      * the following 4 detectable objects
      *  0: Ball,
@@ -104,7 +111,7 @@ public class ObjDetect extends LinearOpMode{
     private TFObjectDetector tfod;
 
     @Override
-    public void runOpMode() {
+    public void runOpMode() throws InterruptedException{
         multiTelemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
@@ -132,6 +139,12 @@ public class ObjDetect extends LinearOpMode{
         multiTelemetry.update();
         waitForStart();
 
+        if (isStopRequested()) {
+            tfod.shutdown();
+            vuforia.close();
+            return;
+        }
+
         if (opModeIsActive()) {
             while (opModeIsActive()) {
                 if (tfod != null) {
@@ -158,15 +171,15 @@ public class ObjDetect extends LinearOpMode{
                             multiTelemetry.addData(String.format(new Locale("en", "US"),
                                     "  x,y (%d)", i), "%.03f , %.03f",
                                     x, y);
-                            if (x < 0.33) {
+                            if (x < LEFT_BOUNDARY) {
                                 multiTelemetry.addData("   side","left");
-                            } else if (x < 0.66) {
+                            } else if (x < RIGHT_BOUNDARY) {
                                 multiTelemetry.addData("   side", "middle");
                             } else {
                                 multiTelemetry.addData("   side", "right");
                             }
-                            if ((recognition.getRight() - recognition.getLeft())/recognition.getImageWidth() > 0.25 ||
-                                    (recognition.getBottom() - recognition.getTop())/recognition.getImageHeight() > 0.5) {
+                            if ((recognition.getRight() - recognition.getLeft())/recognition.getImageWidth() > WIDTH_IGNORE ||
+                                    (recognition.getBottom() - recognition.getTop())/recognition.getImageHeight() > HEIGHT_IGNORE) {
                                 multiTelemetry.addData("   ignore", "true");
                             } else {
                                 multiTelemetry.addData("   ignore", "false");
@@ -178,7 +191,11 @@ public class ObjDetect extends LinearOpMode{
                 }
             }
         }
+
+        tfod.shutdown();
+        vuforia.close();
     }
+
 
     /**
      * Initialize the Vuforia localization engine.
@@ -195,7 +212,7 @@ public class ObjDetect extends LinearOpMode{
 
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
-        FtcDashboard.getInstance().startCameraStream(vuforia, 0);
+
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
     }
 
@@ -203,13 +220,14 @@ public class ObjDetect extends LinearOpMode{
      * Initialize the TensorFlow Object Detection engine.
      */
     private void initTfod() {
-        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        // MUST CREATE WITH R.id.tfodMonitorViewId if camera stream is to work
+        int tfodMonitorViewId = R.id.tfodMonitorViewId;
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
         tfodParameters.minResultConfidence = 0.8f;
         tfodParameters.isModelTensorFlow2 = true;
         tfodParameters.inputSize = 320;
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
+        FtcDashboard.getInstance().startCameraStream(tfod, 0);
     }
 }
