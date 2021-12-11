@@ -127,7 +127,7 @@ public class DriveTrain {
 
         // set the motor powers
 
-        setPower(power - output, power + output, power - output, power + output);
+        setPower(power * -output, power * output, power * -output, power * output);
 
         // save the error for the next iteration
     }
