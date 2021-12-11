@@ -90,8 +90,14 @@ public class WorkingTeleOp extends OpMode
         armLift = hardwareMap.get(DcMotor.class, "arm_lift");
         clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
         clawRight = hardwareMap.get(DcMotor.class, "claw_right");
+
+
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setDirection(DcMotor.Direction.FORWARD);
+        armLift.setTargetPosition(0);
+        clawRight.setDirection(DcMotor.Direction.REVERSE);
+        clawLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        clawRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
@@ -149,35 +155,57 @@ public class WorkingTeleOp extends OpMode
         telemetry.addData("arm pos", armLift.getCurrentPosition());
 
         // both bumpers = duck mode
-        if (gamepad1.left_bumper && gamepad1.right_bumper) {
-            //manipulator.runDuckMode(false);
-        } else if (gamepad1.right_bumper){
-            //manipulator.runIntake(false);
-        } else if (gamepad1.left_bumper) {
-            //manipulator.runIntake(true);
+        if (gamepad1.right_trigger > 0.00 && gamepad1.left_trigger > 0.00) {
+            clawLeft.setPower(gamepad1.left_trigger);
+            clawRight.setPower(-gamepad1.right_trigger);
+            armLift.setTargetPosition(-700);
+        } else if (gamepad1.right_trigger > 0.0){
+            clawLeft.setPower(-gamepad1.right_trigger);
+            clawRight.setPower(-gamepad1.right_trigger);
+        } else if (gamepad1.left_trigger > 0.0) { // intake goes to ground also
+            clawLeft.setPower(gamepad1.left_trigger);
+            clawRight.setPower(gamepad1.left_trigger);
+            armLift.setTargetPosition(-30);
+            armLift.setPower(0.6);
         } else {
-            //manipulator.runIntake(0);
+            clawLeft.setPower(0);
+            clawRight.setPower(0);
         }
 
         switch (getGamepadButtons(gamepad1)) {
             case 'a':
                 telemetry.addData("button", "a");
                 armLift.setTargetPosition(-30);
+                armLift.setPower(0.3);
                 break;
+            default: // fall through on purpose
             case 'b':
                 telemetry.addData("button", "b");
                 armLift.setTargetPosition(-300);
+                armLift.setPower(0.6);
                 break;
             case 'y':
                 telemetry.addData("button", "y");
                 armLift.setTargetPosition(-650);
+                armLift.setPower(0.6);
                 break;
             case 'x':
                 telemetry.addData("button", "x");
                 armLift.setTargetPosition(-915);
+                armLift.setPower(0.6);
+                break;
+            case 'd':
+                telemetry.addData("button", "u");
+                armLift.setTargetPosition(armLift.getCurrentPosition() + 30);
+                armLift.setPower(0.6);
+                break;
+            case 'u':
+                telemetry.addData("button", "u");
+                armLift.setTargetPosition(armLift.getCurrentPosition() - 30);
+                armLift.setPower(0.6);
                 break;
         }
-        armLift.setPower(0.6);
+
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         // SHARED SHIPPING HUB TIPPED - 20 pt!!!!!
 
@@ -203,6 +231,10 @@ public class WorkingTeleOp extends OpMode
             return 'x';
         } else if (gamepad.y) {
             return 'y';
+        } else if (gamepad.dpad_down) {
+            return 'd';
+        } else if (gamepad.dpad_up) {
+            return 'u';
         } else
             return '\u0000';
     }

@@ -123,6 +123,7 @@ public class AbstractedTeleOp extends OpMode
         // Setup a variable for each drive wheel to save power level for telemetry
         double leftPower;
         double rightPower;
+        int currentArmPosition = manipulator.getArmEncoder();
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // - This uses basic math to combine motions and is easier to drive straight.
@@ -145,10 +146,11 @@ public class AbstractedTeleOp extends OpMode
         // both bumpers = duck mode
         if (gamepad1.left_bumper && gamepad1.right_bumper) {
             manipulator.runDuckMode(false);
-        } else if (gamepad1.right_bumper){
+        } else if (gamepad1.left_bumper){
             manipulator.runIntake(false);
-        } else if (gamepad1.left_bumper) {
+        } else if (gamepad1.right_bumper) {
             manipulator.runIntake(true);
+            manipulator.moveArmToPosition(Manipulator.ArmPosition.GROUND);
         } else {
             manipulator.runIntake(0);
         }
@@ -158,6 +160,7 @@ public class AbstractedTeleOp extends OpMode
                 telemetry.addData("button", "a");
                 manipulator.moveArmToPosition(Manipulator.ArmPosition.GROUND);
                 break;
+            default: // fall through on purpose
             case 'b':
                 telemetry.addData("button", "b");
                 manipulator.moveArmToPosition(Manipulator.ArmPosition.BOTTOM);
@@ -170,6 +173,16 @@ public class AbstractedTeleOp extends OpMode
                 telemetry.addData("button", "x");
                 manipulator.moveArmToPosition(Manipulator.ArmPosition.TOP);
                 break;
+            case 'd':
+                telemetry.addData("button", "u");
+                manipulator.nudgeArm(30, currentArmPosition);
+                break;
+            case 'u':
+                telemetry.addData("button", "u");
+                manipulator.nudgeArm(-30, currentArmPosition);
+                break;
+
+
         }
         // SHARED SHIPPING HUB TIPPED - 20 pt!!!!!
 
@@ -195,6 +208,10 @@ public class AbstractedTeleOp extends OpMode
             return 'x';
         } else if (gamepad.y) {
             return 'y';
+        } else if (gamepad.dpad_down) {
+            return 'd';
+        } else if (gamepad.dpad_up) {
+            return 'u';
         } else
             return '\u0000';
     }

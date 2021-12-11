@@ -140,6 +140,12 @@ public class Manipulator {
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armState = ArmPosition.UNKNOWN;
     }
+    public void nudgeArm(int encoderTicks, int currentEncoderTicks) {
+        nudgeArm(encoderTicks, currentEncoderTicks, DEFAULT_SPEED);
+    }
+    public void nudgeArm(int encoderTicks, int currentEncoderTicks, double power) {
+        moveArmToPosition(currentEncoderTicks + encoderTicks, power);
+    }
 
 
     public enum ArmPosition {
