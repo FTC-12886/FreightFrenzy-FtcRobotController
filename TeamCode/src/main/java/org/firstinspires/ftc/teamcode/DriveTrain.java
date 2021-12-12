@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -80,6 +81,11 @@ public class DriveTrain {
      * @param rearRight  power to drive the rear right motor at
      */
     public void setPower(double frontLeft, double frontRight, double rearLeft, double rearRight) {
+        frontLeft = Range.clip(frontLeft, -1, 1);
+        frontRight = Range.clip(frontRight, -1, 1);
+        rearLeft = Range.clip(rearLeft, -1, 1);
+        rearRight = Range.clip(rearRight, -1, 1);
+
         frontLeftDrive.setPower(frontLeft);
         frontRightDrive.setPower(frontRight);
         rearLeftDrive.setPower(rearLeft);
