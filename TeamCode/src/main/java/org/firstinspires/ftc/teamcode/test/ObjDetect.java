@@ -30,19 +30,18 @@
 package org.firstinspires.ftc.teamcode.test;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
 import java.util.List;
 import java.util.Locale;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
@@ -51,21 +50,25 @@ import org.firstinspires.ftc.teamcode.R;
 /**
  * This 2020-2021 OpMode illustrates the basics of using the TensorFlow Object Detection API to
  * determine the position of the Freight Frenzy game elements.
- *
+ * <p>
  * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list.
- *
+ * <p>
  * IMPORTANT: In order to use this OpMode, you need to obtain your own Vuforia license key as
  * is explained below.
  */
 
 @Config
 @Autonomous
-public class ObjDetect extends LinearOpMode{
-    public static double RIGHT_BOUNDARY = 0.66;
+public class ObjDetect extends LinearOpMode {
+    public static double RIGHT_BOUNDARY = 0.67;
     public static double LEFT_BOUNDARY = 0.33;
     public static double WIDTH_IGNORE = 0.25;
     public static double HEIGHT_IGNORE = 0.5;
+    public static double SIZE_X = 50;
+    public static double SIZE_Y = 50;
+    public static boolean SHOW_IGNORE = false;
+    private static final String[] COLORS = new String[]{"blue", "green", "yellow", "purple", "teal"};
     /* Note: This sample uses the all-objects Tensor Flow model (FreightFrenzy_BCDM.tflite), which contains
      * the following 4 detectable objects
      *  0: Ball,
@@ -77,7 +80,6 @@ public class ObjDetect extends LinearOpMode{
      *  FreightFrenzy_BC.tflite  0: Ball,  1: Cube
      *  FreightFrenzy_DM.tflite  0: Duck,  1: Marker
      */
-    private static MultipleTelemetry multiTelemetry;
     private static final String TFOD_MODEL_FILE = AppUtil.FIRST_FOLDER + "/tflitemodels/TeamElement.tflite";
     private static final String[] LABELS = {
             "Team"
@@ -111,8 +113,7 @@ public class ObjDetect extends LinearOpMode{
     private TFObjectDetector tfod;
 
     @Override
-    public void runOpMode() throws InterruptedException{
-        multiTelemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+    public void runOpMode() throws InterruptedException {
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
         initVuforia();
@@ -131,12 +132,12 @@ public class ObjDetect extends LinearOpMode{
             // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
             // should be set to the value of the images used to create the TensorFlow Object Detection model
             // (typically 16/9).
-            tfod.setZoom(1, 4.0/3.0);
+            tfod.setZoom(1, 4.0 / 3.0);
         }
 
         /** Wait for the game to begin */
-        multiTelemetry.addData(">", "Press Play to start op mode");
-        multiTelemetry.update();
+        telemetry.addData(">", "Press Play to start op mode");
+        telemetry.update();
         waitForStart();
 
         if (isStopRequested()) {
@@ -147,53 +148,131 @@ public class ObjDetect extends LinearOpMode{
 
         if (opModeIsActive()) {
             while (opModeIsActive()) {
+                TelemetryPacket graph = new TelemetryPacket();
+                addLines(graph.fieldOverlay(), LEFT_BOUNDARY, RIGHT_BOUNDARY, 1, "black");
+                addRectangle(graph.fieldOverlay(), 0, 0, 1, 1, 1, "black"); // drawing area
+                if (SHOW_IGNORE) {
+                    addRectangle(graph.fieldOverlay(), 0, 0, WIDTH_IGNORE, HEIGHT_IGNORE, 1, "red"); // ignore area
+                    addCircle(graph.fieldOverlay(), WIDTH_IGNORE / 2, HEIGHT_IGNORE / 2, 1, "red");
+                }
                 if (tfod != null) {
                     // getUpdatedRecognitions() will return null if no new information is available since
                     // the last time that call was made.
                     List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
                     if (updatedRecognitions != null) {
-                        multiTelemetry.addData("# Object Detected", updatedRecognitions.size());
+                        telemetry.addData("# Object Detected", updatedRecognitions.size());
 
+                        double sumTop = 0;
+                        double sumLeft = 0;
+                        double sumBottom = 0;
+                        double sumRight = 0;
+                        double sumX = 0;
+                        double sumY = 0;
+                        int numNonIgnore = 0;
                         // step through the list of recognitions and display boundary info.
                         int i = 0;
                         for (Recognition recognition : updatedRecognitions) {
-                            multiTelemetry.addData(String.format(new Locale("en", "US"),
+                            boolean ignore = (recognition.getRight() - recognition.getLeft()) / recognition.getImageWidth() > WIDTH_IGNORE ||
+                                    (recognition.getBottom() - recognition.getTop()) / recognition.getImageHeight() > HEIGHT_IGNORE;
+                            numNonIgnore += ignore ? 0 : 1;
+
+
+                            double top = recognition.getTop() / recognition.getImageHeight();
+                            sumTop += !ignore ? top : 0;
+                            double left = recognition.getLeft() / recognition.getImageWidth();
+                            sumLeft += !ignore ? left : 0;
+                            double bottom = recognition.getBottom() / recognition.getImageHeight();
+                            sumBottom += !ignore ? bottom : 0;
+                            double right = recognition.getRight() / recognition.getImageWidth();
+                            sumRight += !ignore ? right : 0;
+
+                            double x = (left + right) / 2;
+                            sumX += !ignore ? x : 0;
+                            double y = (top + bottom) / 2;
+                            sumY += !ignore ? y : 0;
+
+                            String color = ignore ? "red" : COLORS[i];
+                            if (!ignore || SHOW_IGNORE) {
+                                addCircle(graph.fieldOverlay(), x, y, 1, color);
+                                addRectangle(graph.fieldOverlay(), left, top, right, bottom, 1, color);
+                            }
+                            telemetry.addData(String.format(new Locale("en", "US"),
                                     "label (%d)", i), recognition.getLabel());
-                            multiTelemetry.addData(String.format(new Locale("en", "US"),
-                                    "  left,top (%d)", i), "%.03f , %.03f",
+                            telemetry.addData(String.format(new Locale("en", "US"),
+                                            "  left,top (%d)", i), "%.03f , %.03f",
                                     recognition.getLeft(), recognition.getTop());
-                            multiTelemetry.addData(String.format(new Locale("en", "US"),
-                                    "  right,bottom (%d)", i), "%.03f , %.03f",
+                            telemetry.addData(String.format(new Locale("en", "US"),
+                                            "  right,bottom (%d)", i), "%.03f , %.03f",
                                     recognition.getRight(), recognition.getBottom());
 
-                            double x = ((recognition.getRight() + recognition.getLeft())/2)/ recognition.getImageWidth();
-                            double y = ((recognition.getTop() + recognition.getBottom())/2)/ recognition.getImageHeight();
-                            multiTelemetry.addData(String.format(new Locale("en", "US"),
+
+                            telemetry.addData(String.format(new Locale("en", "US"),
                                     "  x,y (%d)", i), "%.03f , %.03f",
                                     x, y);
+
                             if (x < LEFT_BOUNDARY) {
-                                multiTelemetry.addData("   side","left");
+                                telemetry.addData("   side","left");
                             } else if (x < RIGHT_BOUNDARY) {
-                                multiTelemetry.addData("   side", "middle");
+                                telemetry.addData("   side", "middle");
                             } else {
-                                multiTelemetry.addData("   side", "right");
+                                telemetry.addData("   side", "right");
                             }
-                            if ((recognition.getRight() - recognition.getLeft())/recognition.getImageWidth() > WIDTH_IGNORE ||
-                                    (recognition.getBottom() - recognition.getTop())/recognition.getImageHeight() > HEIGHT_IGNORE) {
-                                multiTelemetry.addData("   ignore", "true");
-                            } else {
-                                multiTelemetry.addData("   ignore", "false");
-                            }
+                            telemetry.addData("   ignore", ignore);
                             i++;
                         }
-                        multiTelemetry.update();
+                        if (numNonIgnore != 0) {
+                            addCircle(graph.fieldOverlay(), sumX / numNonIgnore, sumY / numNonIgnore, 1, "black");
+                            addRectangle(graph.fieldOverlay(), sumLeft / numNonIgnore, sumTop / numNonIgnore, sumRight / numNonIgnore, sumBottom / numNonIgnore, 1, "black");
+                        }
+                        telemetry.addData("sumX", sumX);
+                        telemetry.addData("sumY", sumY);
+                        telemetry.addData("numNonIgnore", numNonIgnore);
+                        FtcDashboard.getInstance().sendTelemetryPacket(graph);
                     }
                 }
+                telemetry.update();
             }
         }
-
         tfod.shutdown();
         vuforia.close();
+    }
+
+
+
+    private void addLines(Canvas canvas, double leftBoundary, double rightBoundary, int width, String color) {
+        canvas.setStrokeWidth(width);
+        canvas.setStroke(color);
+        canvas.strokeLine(SIZE_Y, -convertX(leftBoundary), -SIZE_Y, -convertX(leftBoundary));
+        canvas.strokeLine(SIZE_Y, -convertX(rightBoundary), -SIZE_Y, -convertX(rightBoundary));
+    }
+
+    private void addCircle(Canvas canvas, double x, double y, double radius, String color) {
+        canvas.setFill(color);
+        x = convertX(x);
+        y = convertY(y);
+        canvas.fillCircle(y, -x, radius);
+    }
+
+    private void addRectangle(Canvas canvas, double x1, double y1, double x2, double y2, int width, String color) {
+        canvas.setStrokeWidth(width);
+        canvas.setStroke(color);
+        x1 = convertX(x1);
+        y1 = convertY(y1);
+        x2 = convertX(x2);
+        y2 = convertY(y2);
+        double x3 = x2;
+        double y3 = y1;
+        double x4 = x1;
+        double y4 = y2;
+        canvas.strokePolygon(new double[]{y1, y3, y2, y4, y1}, new double[]{-x1, -x3, -x2, -x4, -x1});
+    }
+
+    private double convertX(double x) {
+        return (x - SIZE_X) + 2 * SIZE_X * x;
+    }
+
+    private double convertY(double y) {
+        return (y + SIZE_Y) - 2 * SIZE_Y * y;
     }
 
 
