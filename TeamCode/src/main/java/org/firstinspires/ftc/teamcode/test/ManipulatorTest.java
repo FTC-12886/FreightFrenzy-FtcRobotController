@@ -4,6 +4,8 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import org.firstinspires.ftc.teamcode.Manipulator;
 
@@ -18,10 +20,10 @@ public class ManipulatorTest extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         Manipulator manipulator = new Manipulator(
-                hardwareMap.dcMotor.get("arm_lift"),
-                hardwareMap.dcMotor.get("claw_left"),
-                hardwareMap.dcMotor.get("claw_right")
-        );
+                hardwareMap.get(DcMotor.class, "arm_lift"),
+                hardwareMap.get(DigitalChannel.class, "intake_switch"),
+                hardwareMap.get(DcMotor.class, "claw_left"),
+                hardwareMap.get(DcMotor.class, "claw_right"));
 
         waitForStart();
         if (isStopRequested()) return;

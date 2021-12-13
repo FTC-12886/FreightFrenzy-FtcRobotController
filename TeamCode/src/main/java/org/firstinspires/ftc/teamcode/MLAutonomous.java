@@ -36,6 +36,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.State;
@@ -141,9 +142,10 @@ public class MLAutonomous extends OpMode
         rightDrive.setDirection(DcMotor.Direction.REVERSE);
         rearDistance = hardwareMap.get(DistanceSensor.class, "rearDistance");
         manipulator = new Manipulator(
-                hardwareMap.get(DcMotor.class, "armLift"),
-                hardwareMap.get(DcMotor.class, "clawLeft"),
-                hardwareMap.get(DcMotor.class, "clawRight"));
+                hardwareMap.get(DcMotor.class, "arm_lift"),
+                hardwareMap.get(DigitalChannel.class, "intake_switch"),
+                hardwareMap.get(DcMotor.class, "claw_left"),
+                hardwareMap.get(DcMotor.class, "claw_right"));
         initGyro();
 
         // Most robots need the motor on one side to be reversed to drive forward

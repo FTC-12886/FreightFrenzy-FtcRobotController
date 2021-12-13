@@ -33,6 +33,7 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -86,6 +87,7 @@ public class AbstractedTeleOp extends OpMode
 
         manipulator = new Manipulator(
                 hardwareMap.get(DcMotor.class, "arm_lift"),
+                hardwareMap.get(DigitalChannel.class, "intake_switch"),
                 hardwareMap.get(DcMotor.class, "claw_left"),
                 hardwareMap.get(DcMotor.class, "claw_right"));
 
