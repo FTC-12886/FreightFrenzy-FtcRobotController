@@ -36,11 +36,14 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.checkerframework.checker.units.qual.Angle;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
@@ -59,7 +62,7 @@ import org.firstinspires.ftc.teamcode.R;
  */
 
 @Config
-@Autonomous
+@Autonomous(name="Obj Detect", group="ML")
 public class ObjDetect extends LinearOpMode {
     public static double RIGHT_BOUNDARY = 0.67;
     public static double LEFT_BOUNDARY = 0.33;
@@ -84,33 +87,11 @@ public class ObjDetect extends LinearOpMode {
     private static final String[] LABELS = {
             "Team"
     };
-
-    /*
-     * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
-     * 'parameters.vuforiaLicenseKey' is initialized is for illustration only, and will not function.
-     * A Vuforia 'Development' license key, can be obtained free of charge from the Vuforia developer
-     * web site at https://developer.vuforia.com/license-manager.
-     *
-     * Vuforia license keys are always 380 characters long, and look as if they contain mostly
-     * random data. As an example, here is a example of a fragment of a valid key:
-     *      ... yIgIzTqZ4mWjk9wd3cZO9T1axEqzuhxoGlfOOI2dRzKS4T0hQ8kT ...
-     * Once you've obtained a license key, copy the string from the Vuforia web site
-     * and paste it in to your code on the next line, between the double quotes.
-     */
     private static final String VUFORIA_KEY =
             "ASg2QBr/////AAABmU3Gzjd/akXrk1NzMQrLNgN6wxZIJ3H7AHf8eU6cL+4hcspa6m1glKBeuuSXaELDtK5J81Ewk7+bYxWFk66Y8qupXK8Hqo81er+2T7R7gfZ5O+dCnJpBmU394oA0PrT2L1qAn3ArLA9bkjNM7xauWiff4YtcuSyDBbBGcMJz1BUDMSJ5az94/XlX+d3ATUBiR3T82RSPXZfv6dn+TvIDr1DqLNwgQnzgTPWZwgITgvAAscBjxETX4CgzThrOShqVkKxAtWOyj+uuU53UIhNHsVMEsJuafMqg+Mhkp6c/+VP6LoFPDJwGwdMxrFByCf2GAKkxmWFTQzreHtwVsN2u5O8wXOGlL5WCi3L1R5Iw7MaW";
-
-    /**
-     * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
-     * localization engine.
-     */
     private VuforiaLocalizer vuforia;
-
-    /**
-     * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
-     * Detection engine.
-     */
     private TFObjectDetector tfod;
+    private ProcessingParameters processingParameters;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -118,7 +99,7 @@ public class ObjDetect extends LinearOpMode {
         // first.
         initVuforia();
         initTfod();
-
+        FtcDashboard.getInstance().startCameraStream(tfod, 0);
         /**
          * Activate TensorFlow Object Detection before we wait for the start command.
          * Do it here so that the Camera Stream window will have the TensorFlow annotations visible.
@@ -275,7 +256,6 @@ public class ObjDetect extends LinearOpMode {
         return (y + SIZE_Y) - 2 * SIZE_Y * y;
     }
 
-
     /**
      * Initialize the Vuforia localization engine.
      */
@@ -307,6 +287,245 @@ public class ObjDetect extends LinearOpMode {
         tfodParameters.inputSize = 320;
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
-        FtcDashboard.getInstance().startCameraStream(tfod, 0);
     }
+
+    public ObjDetect(TFObjectDetector tfod) {
+        this.tfod = tfod;
+        tfod.activate();
+    }
+
+    public ObjDetect(TFObjectDetector tfod, ProcessingParameters processingParameters) {
+        this(tfod);
+        this.processingParameters = processingParameters;
+    }
+
+    public List<RecognitionPercent> getRecognitions() {
+        List<Recognition> recognitions = tfod.getRecognitions();
+        if (recognitions == null) {
+            return null;
+        }
+        List<RecognitionPercent> percentRecognitions = new ArrayList<>();
+        for (Recognition recognition : recognitions) {
+            percentRecognitions.add(new RecognitionPercent(recognition));
+        }
+
+        return percentRecognitions;
+    }
+
+    public List<RecognitionPercent> getApprovedRecognitions() {
+        List<RecognitionPercent> recognitions = getRecognitions();
+        if (recognitions == null) {
+            return null;
+        }
+        List<RecognitionPercent> approvedRecognitions = new ArrayList<>();
+        for (RecognitionPercent recognition : recognitions) {
+            if (recognition.getWidth() < processingParameters.widthIgnore && recognition.getHeight() < processingParameters.heightIgnore) {
+                approvedRecognitions.add(recognition);
+            }
+        }
+
+        return approvedRecognitions;
+    }
+
+    public RecognitionPercent getAverageApprovedRecognitions() {
+        List<RecognitionPercent> recognitions = getApprovedRecognitions();
+        if (recognitions == null) {
+            return null;
+        }
+        int i = 0;
+        float left = 0, right = 0, top = 0, bottom = 0;
+        float confidence = 0;
+        double angle = 0;
+
+        for (RecognitionPercent recognition : recognitions) {
+            left += recognition.getLeft();
+            right += recognition.getRight();
+            top += recognition.getTop();
+            bottom += recognition.getBottom();
+            confidence += recognition.getConfidence();
+            angle += recognition.estimateAngleToObject(AngleUnit.RADIANS);
+            i++;
+        }
+        left /= i;
+        right /= i;
+        top /= i;
+        bottom /= i;
+        confidence /= i;
+        angle /= i;
+        return new RecognitionPercent(new RecognitionStore(left, right, top, bottom, confidence, 1, 1, angle, AngleUnit.RADIANS));
+    }
+
+    public int getPosition() {
+        RecognitionPercent recognition = getAverageApprovedRecognitions();
+        if (recognition == null)
+            return 0;
+        if (recognition.getX() < processingParameters.leftBoundary)
+            return 1;
+        else if (recognition.getX() < processingParameters.rightBoundary)
+            return 2;
+        else if (recognition.getX() > processingParameters.rightBoundary)
+            return 3;
+        else
+            return -1;
+    }
+
+    public static class ProcessingParameters {
+        public double rightBoundary = RIGHT_BOUNDARY;
+        public double leftBoundary = LEFT_BOUNDARY;
+        public double widthIgnore = WIDTH_IGNORE;
+        public double heightIgnore = HEIGHT_IGNORE;
+    }
+
+    public static class RecognitionPercent implements org.firstinspires.ftc.robotcore.external.tfod.Recognition {
+        private Recognition recognition;
+        @Override
+        public String getLabel() {
+            return recognition.getLabel();
+        }
+
+        @Override
+        public float getConfidence() {
+            return recognition.getConfidence();
+        }
+
+        @Override
+        public float getLeft() {
+            return recognition.getLeft() / recognition.getImageWidth();
+        }
+
+        @Override
+        public float getRight() {
+            return recognition.getRight() / recognition.getImageWidth();
+        }
+
+        @Override
+        public float getTop() {
+            return recognition.getTop() / recognition.getImageHeight();
+        }
+
+        @Override
+        public float getBottom() {
+            return recognition.getBottom() / recognition.getImageHeight();
+        }
+
+        @Override
+        public float getWidth() {
+            return Math.abs(getRight() - getLeft());
+        }
+
+        @Override
+        public float getHeight() {
+            return Math.abs(getBottom() - getTop());
+        }
+
+        public float getX() {
+            return (getLeft() + getRight()) / 2;
+        }
+
+        public float getY() {
+            return (getTop() + getBottom()) / 2;
+        }
+
+        public Recognition getOriginalRecognition() {
+            return recognition;
+        }
+
+        @Override
+        public int getImageWidth() {
+            return 1;
+        }
+
+        @Override
+        public int getImageHeight() {
+            return 1;
+        }
+
+        @Override
+        public double estimateAngleToObject(AngleUnit angleUnit) {
+            return recognition.estimateAngleToObject(angleUnit);
+        }
+
+        public RecognitionPercent(Recognition recognition) {
+            this.recognition = recognition;
+        }
+
+    }
+
+    public static class RecognitionStore implements Recognition{
+        private final float left;
+        private final float right;
+        private final float top;
+        private final float bottom;
+        private final float confidence;
+        private final int imageWidth;
+        private final int imageHeight;
+        private final double angleInRadians;
+
+        @Override
+        public String getLabel() {
+            return null;
+        }
+
+        @Override
+        public float getConfidence() {
+            return confidence;
+        }
+
+        @Override
+        public float getLeft() {
+            return left;
+        }
+
+        @Override
+        public float getRight() {
+            return right;
+        }
+
+        @Override
+        public float getTop() {
+            return top;
+        }
+
+        @Override
+        public float getBottom() {
+            return bottom;
+        }
+
+        @Override
+        public float getWidth() {
+            return Math.abs(getRight() - getLeft());
+        }
+
+        @Override
+        public float getHeight() {
+            return Math.abs(getBottom() - getTop());
+        }
+
+        @Override
+        public int getImageWidth() {
+            return imageWidth;
+        }
+
+        @Override
+        public int getImageHeight() {
+            return imageHeight;
+        }
+
+        @Override
+        public double estimateAngleToObject(AngleUnit angleUnit) {
+            return angleUnit.fromRadians(angleInRadians);
+        }
+
+        public RecognitionStore(float left, float right, float top, float bottom, float confidence, int imageWidth, int imageHeight, double angle, AngleUnit angleUnit) {
+            this.left = left;
+            this.right = right;
+            this.top = top;
+            this.bottom = bottom;
+            this.confidence = confidence;
+            this.imageWidth = imageWidth;
+            this.imageHeight = imageHeight;
+            this.angleInRadians = angleUnit.toRadians(angle);
+        }
+    }
+
 }
