@@ -21,6 +21,7 @@ public class ManipulatorTest extends LinearOpMode {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         Manipulator manipulator = new Manipulator(
                 hardwareMap.get(DcMotor.class, "arm_lift"),
+                hardwareMap.get(DigitalChannel.class, "arm_limit"),
                 hardwareMap.get(DigitalChannel.class, "intake_switch"),
                 hardwareMap.get(DcMotor.class, "claw_left"),
                 hardwareMap.get(DcMotor.class, "claw_right"));

@@ -56,7 +56,7 @@ import java.util.List;
  */
 
 @TeleOp(name="Basic Sample", group="Iterative Opmode")
-
+@Disabled
 public class BasicTeleOp extends OpMode
 {
     // Declare OpMode members.

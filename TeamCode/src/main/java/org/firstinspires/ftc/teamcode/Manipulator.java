@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 public class Manipulator {
 
@@ -9,7 +8,6 @@ public class Manipulator {
     private DcMotor clawLeft;
     private DcMotor clawRight;
     private ArmPosition armState = ArmPosition.GROUND;
-    private DigitalChannel intakeSwitch;
     public static final double ARM_UP_SPEED = 0.6;
     public static final double ARM_DOWN_SPEED = 0.3;
     private static final double DEFAULT_SPEED = 0.3;
@@ -21,14 +19,12 @@ public class Manipulator {
      * @param clawLeft  the left claw motor
      * @param clawRight the right claw motor
      */
-    public Manipulator(DcMotor armLift, DigitalChannel intakeSwitch, DcMotor clawLeft, DcMotor clawRight) {
+    public Manipulator(DcMotor armLift, DcMotor clawLeft, DcMotor clawRight) {
         this.armLift = armLift;
         this.clawLeft = clawLeft;
         this.clawRight = clawRight;
-        this.intakeSwitch = intakeSwitch;
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setDirection(DcMotor.Direction.FORWARD);
-        intakeSwitch.setMode(DigitalChannel.Mode.INPUT);
         clawRight.setDirection(DcMotor.Direction.REVERSE);
         clawLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         clawRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -44,31 +40,13 @@ public class Manipulator {
         return armLift.getCurrentPosition();
     }
 
-    /**
-     * Returns whether the intake switch is pressed
-     * @return whether the intake switch is pressed
-     * true if pressed
-     */
-    public boolean getIntakeSwitch() {
-        return intakeSwitch.getState();
-    }
-
-    /**
-     * Set the power of the left claw motor
-     * @param power the power to set the motor to
-     */
     public void setClawLeftPower(int power) {
         clawLeft.setPower(power);
     }
 
-    /**
-     * Set the power of the right claw motor
-     * @param power the power to set the motor to
-     */
     public void setClawRightPower(int power) {
         clawRight.setPower(power);
     }
-
     /**
      * Runs the intake at full power
      * @param reverse true if the intake should be reversed (turn into an out-take)
@@ -120,7 +98,7 @@ public class Manipulator {
         if (armState == ArmPosition.UNKNOWN) {
             moveArmToPosition(armPosition, DEFAULT_SPEED);
         } else {
-            boolean up = armPosition.getEncoderTicks() < armState.getEncoderTicks();
+            boolean up = armPosition.getEncoderTicks() > armState.getEncoderTicks();
             if (up)
                 moveArmToPosition(armPosition, ARM_UP_SPEED);
             else
@@ -130,14 +108,10 @@ public class Manipulator {
 
     /**
      * Moves the arm to specified position.
-     * Reset encoder if new position is ground.
      * @param armPosition position to move to
      * @param power power to move at
      */
     public void moveArmToPosition(ArmPosition armPosition, double power) {
-        if (armPosition == ArmPosition.UNKNOWN) {
-            return;
-        }
         armState = armPosition;
 
         armLift.setTargetPosition(armState.getEncoderTicks());
@@ -150,7 +124,6 @@ public class Manipulator {
                 public void run() {
                     while (armLift.isBusy());
                     armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                    Thread.currentThread().interrupt();
                 }
             }).start();
     }
@@ -167,22 +140,9 @@ public class Manipulator {
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armState = ArmPosition.UNKNOWN;
     }
-
-    /**
-     * Nudge the arm up or down
-     * @param encoderTicks encoder ticks to move
-     * @param currentEncoderTicks current encoder ticks
-     */
     public void nudgeArm(int encoderTicks, int currentEncoderTicks) {
         nudgeArm(encoderTicks, currentEncoderTicks, DEFAULT_SPEED);
     }
-
-    /**
-     * Nudge the arm up or down
-     * @param encoderTicks encoder ticks to move
-     * @param currentEncoderTicks current encoder ticks
-     * @param power power to move at
-     */
     public void nudgeArm(int encoderTicks, int currentEncoderTicks, double power) {
         moveArmToPosition(currentEncoderTicks + encoderTicks, power);
     }
@@ -196,7 +156,7 @@ public class Manipulator {
         DUCK (-750),
         TOP (-915);
 
-        private final int encoderTicks;
+        public final int encoderTicks;
 
         ArmPosition(int encoderTicks) {
             this.encoderTicks = encoderTicks;

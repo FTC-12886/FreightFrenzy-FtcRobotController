@@ -30,6 +30,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -55,7 +56,7 @@ import java.util.List;
  */
 
 @TeleOp(name="Abstracted Teleop", group="Iterative Opmode")
-
+@Disabled
 public class AbstractedTeleOp extends OpMode
 {
     // Declare OpMode members.
@@ -87,7 +88,6 @@ public class AbstractedTeleOp extends OpMode
 
         manipulator = new Manipulator(
                 hardwareMap.get(DcMotor.class, "arm_lift"),
-                hardwareMap.get(DigitalChannel.class, "intake_switch"),
                 hardwareMap.get(DcMotor.class, "claw_left"),
                 hardwareMap.get(DcMotor.class, "claw_right"));
 

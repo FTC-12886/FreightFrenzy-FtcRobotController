@@ -1,13 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
+import androidx.appcompat.app.ActionBar;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Autonomous(name="4WD Motor Test")
-
+@Disabled
 public class TestMotors extends OpMode {
     private DcMotor[] motorArray = new DcMotor[4];
     private DcMotor rearLeft;

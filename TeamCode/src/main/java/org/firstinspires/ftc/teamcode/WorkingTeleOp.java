@@ -30,6 +30,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -67,6 +68,7 @@ public class WorkingTeleOp extends OpMode
     private DcMotor clawLeft;
     private DcMotor clawRight;
     private Manipulator manipulator;
+    private DigitalChannel armLimit;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -91,10 +93,12 @@ public class WorkingTeleOp extends OpMode
         clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
         clawRight = hardwareMap.get(DcMotor.class, "claw_right");
 
+        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
+        armLimit.setMode(DigitalChannel.Mode.INPUT);
+
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setDirection(DcMotor.Direction.FORWARD);
-        armLift.setTargetPosition(-300);
         clawRight.setDirection(DcMotor.Direction.REVERSE);
         clawLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         clawRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -105,6 +109,7 @@ public class WorkingTeleOp extends OpMode
         rearLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
         frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
+
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -122,6 +127,9 @@ public class WorkingTeleOp extends OpMode
      */
     @Override
     public void start() {
+        armLift.setTargetPosition(-300);
+        armLift.setPower(0.3);
+        armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         runtime.reset();
     }
 
@@ -135,6 +143,7 @@ public class WorkingTeleOp extends OpMode
         double rightPower;
         double clawRightPower;
         double clawLeftPower;
+        int armEncoder = armLift.getCurrentPosition();
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // - This uses basic math to combine motions and is easier to drive straight.
@@ -158,7 +167,12 @@ public class WorkingTeleOp extends OpMode
         if (gamepad1.right_trigger > 0.00 && gamepad1.left_trigger > 0.00) {
             clawLeft.setPower(gamepad1.left_trigger);
             clawRight.setPower(-gamepad1.right_trigger);
-            armLift.setTargetPosition(-700);
+            int difference = Math.abs(armEncoder - (-650));
+            if (difference < 10 || difference > 100) {
+                armLift.setTargetPosition(-650);
+                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            }
         } else if (gamepad1.right_trigger > 0.0){
             // negative is in
             clawLeft.setPower(gamepad1.right_trigger);
@@ -171,41 +185,50 @@ public class WorkingTeleOp extends OpMode
             clawRight.setPower(0);
         }
 
-        armLift.setPower(0.3);
+        telemetry.addData("armLimit", armLimit.getState());
+        if (!armLimit.getState()) {
+            armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        }
         switch (getGamepadButtons(gamepad1)) {
             case 'a':
                 telemetry.addData("button", "a");
                 armLift.setTargetPosition(-30);
                 armLift.setPower(0.3);
+                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
                 break;
             case 'b':
                 telemetry.addData("button", "b");
                 armLift.setTargetPosition(-300);
                 armLift.setPower(0.6);
+                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
                 break;
             case 'y':
                 telemetry.addData("button", "y");
-                armLift.setTargetPosition(-650);
+                armLift.setTargetPosition(-600);
                 armLift.setPower(0.6);
+                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
                 break;
             case 'x':
                 telemetry.addData("button", "x");
                 armLift.setTargetPosition(-915);
                 armLift.setPower(0.6);
+                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 break;
             case 'd':
-                telemetry.addData("button", "u");
-                armLift.setTargetPosition(armLift.getCurrentPosition() + 30);
-                armLift.setPower(0.6);
+                telemetry.addData("button", "d");
+                armLift.setPower(0.05);
+                armLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 break;
             case 'u':
                 telemetry.addData("button", "u");
-                armLift.setTargetPosition(armLift.getCurrentPosition() - 30);
-                armLift.setPower(0.6);
+                armLift.setPower(0.1);
+                armLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 break;
         }
 
-        armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         // SHARED SHIPPING HUB TIPPED - 20 pt!!!!!
 
         // switch (getGamepadButtons(gamepad1)
@@ -219,6 +242,7 @@ public class WorkingTeleOp extends OpMode
      */
     @Override
     public void stop() {
+
     }
 
     private char getGamepadButtons(Gamepad gamepad) {

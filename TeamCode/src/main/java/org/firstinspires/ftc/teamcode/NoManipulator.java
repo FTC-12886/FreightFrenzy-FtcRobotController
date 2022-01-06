@@ -30,6 +30,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -54,7 +55,7 @@ import java.util.List;
  */
 
 @TeleOp(name="No Manipulator Teleop", group="Iterative Opmode")
-
+@Disabled
 public class NoManipulator extends OpMode
 {
     // Declare OpMode members.
