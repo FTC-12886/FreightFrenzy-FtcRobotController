@@ -57,7 +57,7 @@ public class BackUpAuto extends OpMode{
     private String armState = "0block"; // <-- Using string comparators to better explain...
                                        // ...what is happening with the armState
 
-    private int gyroCalibratedCount = 0;
+    private final int gyroCalibratedCount = 0;
 
     public Orientation angles;
     public Acceleration gravity;

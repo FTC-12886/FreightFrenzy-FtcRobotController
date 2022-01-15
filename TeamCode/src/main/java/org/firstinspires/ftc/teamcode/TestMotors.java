@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import androidx.appcompat.app.ActionBar;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -12,13 +11,13 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @Autonomous(name="4WD Motor Test")
 @Disabled
 public class TestMotors extends OpMode {
-    private DcMotor[] motorArray = new DcMotor[4];
+    private final DcMotor[] motorArray = new DcMotor[4];
     private DcMotor rearLeft;
     private DcMotor rearRight;
     private DcMotor frontLeft;
     private DcMotor frontRight;
     int i = 0;
-    private ElapsedTime elapsedTime = new ElapsedTime();
+    private final ElapsedTime elapsedTime = new ElapsedTime();
     @Override
     public void init() {
         motorArray[0] = hardwareMap.get(DcMotor.class, "rear_right_drive");

@@ -1,50 +1,14 @@
-/* Copyright (c) 2017 FIRST. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list
- * of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice, this
- * list of conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.
- *
- * Neither the name of FIRST nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package org.firstinspires.ftc.teamcode;
 
-// import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.State;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -57,24 +21,8 @@ import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import java.util.List;
 
-/**
- * This file contains an example of an iterative (Non-Linear) "OpMode".
- * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
- * The names of OpModes appear on the menu of the FTC Driver Station.
- * When an selection is made from the menu, the corresponding OpMode
- * class is instantiated on the Robot Controller and executed.
- *
- * This particular OpMode just executes a basic Tank Drive Teleop for a two wheeled robot
- * It includes all the skeletal structure that all iterative OpModes contain.
- *
- * Use Android Studios to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
- */
-
-@Autonomous(name="left red, storage, park warehouse", group="Red", preselectTeleOp = "wroking Teleop")
-
-public class LeftRedStorageWarehouse extends OpMode
-{
+@Autonomous(name="right red, hub, park storage", group="Red", preselectTeleOp = "wroking Teleop")
+public class RightRedHubStorage extends OpMode {
     // Declare OpMode members.
     private final ElapsedTime runtime = new ElapsedTime();
     private DcMotor rearRightDrive = null;
@@ -84,25 +32,13 @@ public class LeftRedStorageWarehouse extends OpMode
     private DcMotor armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
-    private DigitalChannel armLimit;
+    //    private DigitalChannel armLimit;
     private State autonomousState = State.EXIT_START;
     private DistanceSensor rearDistance;
     private BNO055IMU imu;
 
-    public static double RIGHT_BOUNDARY = 0.67;
-    public static double LEFT_BOUNDARY = 0.33;
-    public static double WIDTH_IGNORE = 0.25;
-    public static double HEIGHT_IGNORE = 0.5;
-    private static final String[] COLORS = new String[]{"blue", "green", "yellow", "purple", "teal"};
-    private static final String TFOD_MODEL_FILE = AppUtil.FIRST_FOLDER + "/tflitemodels/TeamElement.tflite";
-    private static final String[] LABELS = {
-            "Team"
-    };
-    private static final String VUFORIA_KEY =
-            "ASg2QBr/////AAABmU3Gzjd/akXrk1NzMQrLNgN6wxZIJ3H7AHf8eU6cL+4hcspa6m1glKBeuuSXaELDtK5J81Ewk7+bYxWFk66Y8qupXK8Hqo81er+2T7R7gfZ5O+dCnJpBmU394oA0PrT2L1qAn3ArLA9bkjNM7xauWiff4YtcuSyDBbBGcMJz1BUDMSJ5az94/XlX+d3ATUBiR3T82RSPXZfv6dn+TvIDr1DqLNwgQnzgTPWZwgITgvAAscBjxETX4CgzThrOShqVkKxAtWOyj+uuU53UIhNHsVMEsJuafMqg+Mhkp6c/+VP6LoFPDJwGwdMxrFByCf2GAKkxmWFTQzreHtwVsN2u5O8wXOGlL5WCi3L1R5Iw7MaW";
-    private VuforiaLocalizer vuforia;
-    private TFObjectDetector tfod;
-
+    private ObjDetect objDetect;
+    private Manipulator.ArmPosition position;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -127,8 +63,8 @@ public class LeftRedStorageWarehouse extends OpMode
         clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
         clawRight = hardwareMap.get(DcMotor.class, "claw_right");
 
-        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
-        armLimit.setMode(DigitalChannel.Mode.INPUT);
+//        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
+//        armLimit.setMode(DigitalChannel.Mode.INPUT);
 
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -152,6 +88,7 @@ public class LeftRedStorageWarehouse extends OpMode
 
 
         initGyro();
+        initObjDetect();
         // initVuforia();
         // initTfod();
         // Tell the driver that initialization is complete.
@@ -163,7 +100,22 @@ public class LeftRedStorageWarehouse extends OpMode
      */
     @Override
     public void init_loop() {
-
+        switch (objDetect.getPosition()) {
+            case 1:
+                position = Manipulator.ArmPosition.BOTTOM;
+                break;
+            case 2:
+                position = Manipulator.ArmPosition.MIDDLE;
+                break;
+            case 3:
+                position = Manipulator.ArmPosition.TOP;
+                break;
+            case 0:
+            case -1:
+                position = Manipulator.ArmPosition.UNKNOWN;
+                break;
+        }
+        telemetry.addData("position", position);
     }
 
     /*
@@ -171,7 +123,11 @@ public class LeftRedStorageWarehouse extends OpMode
      */
     @Override
     public void start() {
-        armLift.setTargetPosition(-300);
+        if (position == Manipulator.ArmPosition.UNKNOWN) {
+            armLift.setTargetPosition(Manipulator.ArmPosition.TOP.encoderTicks);
+        } else {
+            armLift.setTargetPosition(position.encoderTicks);
+        }
         armLift.setPower(0.3);
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         runtime.reset();
@@ -187,7 +143,7 @@ public class LeftRedStorageWarehouse extends OpMode
         double rightPower = 0;
         double clawLeftPower = 0;
         double clawRightPower = 0;
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Status", "Run Time: " + runtime);
 
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         double angle = angles.firstAngle;
@@ -201,16 +157,16 @@ public class LeftRedStorageWarehouse extends OpMode
             case EXIT_START:
                 leftPower = 1;
                 rightPower = 1;
-                if (rearDistance.getDistance(DistanceUnit.CM) > 35) {
+                if (rearCm > 35) {
                     leftPower = 0;
                     rightPower = 0;
-                    autonomousState = State.TURN_STORAGE;
+                    autonomousState = State.TURN_HUB;
                 }
                 break;
-            case TURN_STORAGE:
-                leftPower = 0;
+            case TURN_HUB:
+                leftPower = 0.00;
                 rightPower = 0.75;
-                if (angle >= 65) {
+                if (angle >= 45) {
                     leftPower = 0;
                     rightPower = 0;
                     runtime.reset();
@@ -218,9 +174,9 @@ public class LeftRedStorageWarehouse extends OpMode
                 }
                 break;
             case DRIVE_FORWARDS:
-                leftPower = 1;
-                rightPower = 1;
-                if (runtime.milliseconds() >= 250) {
+                leftPower = 0.75;
+                rightPower = 0.75;
+                if (runtime.milliseconds() >= 500) {
                     runtime.reset();
                     autonomousState = State.DROP_BLOCK;
                 }
@@ -238,10 +194,30 @@ public class LeftRedStorageWarehouse extends OpMode
             case DRIVE_REVERSE:
                 leftPower = -1;
                 rightPower = -1;
-                armLift.setTargetPosition(-300);
-                armLift.setPower(0.6);
-                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                if (rearDistance.getDistance(DistanceUnit.CM) <= 50) {
+                if (runtime.milliseconds() >= 500) {
+                    leftPower = 0;
+                    rightPower = 0;
+                    runtime.reset();
+                    autonomousState = State.TURN_STORAGE;
+                }
+                break;
+            case TURN_STORAGE:
+                leftPower = 0;
+                rightPower = 0.75;
+                if (angle >= 75) {
+                    leftPower = 0;
+                    rightPower = 0;
+                    armLift.setTargetPosition(-300);
+                    armLift.setPower(0.6);
+                    armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    runtime.reset();
+                    autonomousState = State.DRIVE_STORAGE;
+                }
+                break;
+            case DRIVE_STORAGE:
+                leftPower = 1;
+                rightPower = 1;
+                if (runtime.milliseconds() > 5000) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;
@@ -283,14 +259,40 @@ public class LeftRedStorageWarehouse extends OpMode
         imu.initialize(parameters);
     }
 
+    private void initObjDetect() {
+        String tfodModelFile = AppUtil.FIRST_FOLDER + "/tflitemodels/TeamElement.tflite";
+        String[] labels = {
+                "Team"
+        };
+
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        parameters.vuforiaLicenseKey = "ASg2QBr/////AAABmU3Gzjd/akXrk1NzMQrLNgN6wxZIJ3H7AHf8eU6cL+4hcspa6m1glKBeuuSXaELDtK5J81Ewk7+bYxWFk66Y8qupXK8Hqo81er+2T7R7gfZ5O+dCnJpBmU394oA0PrT2L1qAn3ArLA9bkjNM7xauWiff4YtcuSyDBbBGcMJz1BUDMSJ5az94/XlX+d3ATUBiR3T82RSPXZfv6dn+TvIDr1DqLNwgQnzgTPWZwgITgvAAscBjxETX4CgzThrOShqVkKxAtWOyj+uuU53UIhNHsVMEsJuafMqg+Mhkp6c/+VP6LoFPDJwGwdMxrFByCf2GAKkxmWFTQzreHtwVsN2u5O8wXOGlL5WCi3L1R5Iw7MaW";
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+        VuforiaLocalizer vuforia = ClassFactory.getInstance().createVuforia(parameters);
+
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.8f;
+        tfodParameters.isModelTensorFlow2 = true;
+        tfodParameters.inputSize = 320;
+        TFObjectDetector tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromFile(tfodModelFile, labels);
+
+        ObjDetect.ProcessingParameters processingParameters = new ObjDetect.ProcessingParameters();
+        this.objDetect = new ObjDetect(tfod, processingParameters);
+    }
 
     public enum State {
         EXIT_START,
-        TURN_90,
+        TURN_HUB,
         DRIVE_FORWARDS,
         DROP_BLOCK,
         TURN_STORAGE,
+        DRIVE_STORAGE,
+        TURN_END,
         DRIVE_REVERSE,
         END
     }
 }
+

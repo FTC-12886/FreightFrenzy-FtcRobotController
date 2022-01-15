@@ -152,7 +152,7 @@ public class ObjDetect {
     }
 
     public static class RecognitionPercent implements org.firstinspires.ftc.robotcore.external.tfod.Recognition {
-        private Recognition recognition;
+        private final Recognition recognition;
         @Override
         public String getLabel() {
             return recognition.getLabel();

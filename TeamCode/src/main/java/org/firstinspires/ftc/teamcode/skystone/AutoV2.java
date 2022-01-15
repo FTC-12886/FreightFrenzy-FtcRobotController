@@ -55,13 +55,13 @@ public class AutoV2 extends OpMode{
     private DistanceSensor frontDistance;
     private DistanceSensor rearDistance;
 
-    private String driveState = "driveForward"; // <-- Using string comparators to better explain...
+    private final String driveState = "driveForward"; // <-- Using string comparators to better explain...
                                         // ...what is happening with the autoState
 
     private String armState = "0block"; // <-- Using string comparators to better explain...
                                        // ...what is happening with the armState
 
-    private int gyroCalibratedCount = 0;
+    private final int gyroCalibratedCount = 0;
 
     public Orientation angles;
     public Acceleration gravity;

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.test;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.teamcode.R;
  * also works for UVCs with slight adjustments.
  */
 @Autonomous
+@Disabled
 public class VuforiaStreamOpMode extends LinearOpMode {
 
     // TODO: fill in

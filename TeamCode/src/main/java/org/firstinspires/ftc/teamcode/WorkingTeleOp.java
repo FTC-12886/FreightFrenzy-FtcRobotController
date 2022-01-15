@@ -30,7 +30,6 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -59,7 +58,7 @@ import java.util.List;
 public class WorkingTeleOp extends OpMode
 {
     // Declare OpMode members.
-    private ElapsedTime runtime = new ElapsedTime();
+    private final ElapsedTime runtime = new ElapsedTime();
     private DcMotor rearRightDrive = null;
     private DcMotor rearLeftDrive = null;
     private DcMotor frontRightDrive = null;
@@ -67,8 +66,7 @@ public class WorkingTeleOp extends OpMode
     private DcMotor armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
-    private Manipulator manipulator;
-    private DigitalChannel armLimit;
+//    private DigitalChannel armLimit;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -93,8 +91,8 @@ public class WorkingTeleOp extends OpMode
         clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
         clawRight = hardwareMap.get(DcMotor.class, "claw_right");
 
-        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
-        armLimit.setMode(DigitalChannel.Mode.INPUT);
+//        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
+//        armLimit.setMode(DigitalChannel.Mode.INPUT);
 
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -141,8 +139,6 @@ public class WorkingTeleOp extends OpMode
         // Setup a variable for each drive wheel to save power level for telemetry
         double leftPower;
         double rightPower;
-        double clawRightPower;
-        double clawLeftPower;
         int armEncoder = armLift.getCurrentPosition();
 
         // POV Mode uses left stick to go forward, and right stick to turn.
@@ -159,7 +155,7 @@ public class WorkingTeleOp extends OpMode
         frontRightDrive.setPower(rightPower);
 
         // Show the elapsed game time and wheel power.
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Status", "Run Time: " + runtime);
         telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
         telemetry.addData("arm pos", armLift.getCurrentPosition());
 
@@ -185,10 +181,10 @@ public class WorkingTeleOp extends OpMode
             clawRight.setPower(0);
         }
 
-        telemetry.addData("armLimit", armLimit.getState());
-        if (!armLimit.getState()) {
-            armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        }
+//        telemetry.addData("armLimit", armLimit.getState());
+//        if (!armLimit.getState()) {
+//            armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        }
         switch (getGamepadButtons(gamepad1)) {
             case 'a':
                 telemetry.addData("button", "a");

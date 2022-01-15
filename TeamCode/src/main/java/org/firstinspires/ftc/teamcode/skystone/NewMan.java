@@ -93,7 +93,7 @@ public class NewMan extends OpMode {
     private String armState = "0block"; // <-- Using string comparators to better explain...
                                         // ...what is happening with the armState
 
-    private String driveState = "step1";
+    private final String driveState = "step1";
 
     public double leftStickY;
     public double leftStickX;
@@ -105,7 +105,7 @@ public class NewMan extends OpMode {
     private boolean arcadeMode = false;
     private boolean manualControl = false;
 
-    private int gyroCalibratedCount = 0;
+    private final int gyroCalibratedCount = 0;
     public double scalingFactor = 0.85;
     private float manualArmPower;
 

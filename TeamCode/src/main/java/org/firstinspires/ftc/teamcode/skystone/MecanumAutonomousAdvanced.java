@@ -27,20 +27,20 @@ public class MecanumAutonomousAdvanced {
     // wheel locations TODO robot geometry
     double wheel_x = 0.085;
     double wheel_y = 0.170;
-    private double[][] wheel_loc = {{wheel_x, -wheel_y},
+    private final double[][] wheel_loc = {{wheel_x, -wheel_y},
                     {wheel_x, wheel_y},
                     {-wheel_x, -wheel_y},
                     {-wheel_x, wheel_y}};
 
     // which direction does the wheel push the robot when spun forwards?
-    private double c45 =  Math.sqrt(2.0)/2.0;
-    private double[][] wheel_push = {{c45, c45}, {c45, -c45}, {c45, -c45}, {c45, c45}};
+    private final double c45 =  Math.sqrt(2.0)/2.0;
+    private final double[][] wheel_push = {{c45, c45}, {c45, -c45}, {c45, -c45}, {c45, c45}};
 
-    private double MAX_DRIVE_SPEED = 2480f;
-    private double mctrl_f = 32767 / MAX_DRIVE_SPEED; // "unit effort" / (tic/second)
-    private double mctrl_p = 1 * 0.6 * mctrl_f; // using 0.6*2 seemed better on the ground?
-    private double mctrl_i = 1.5 * 0.5 * mctrl_f; // using 0.5*2 seemed better on the ground?
-    private double mctrl_d = 0.1 * mctrl_p;
+    private final double MAX_DRIVE_SPEED = 2480f;
+    private final double mctrl_f = 32767 / MAX_DRIVE_SPEED; // "unit effort" / (tic/second)
+    private final double mctrl_p = 1 * 0.6 * mctrl_f; // using 0.6*2 seemed better on the ground?
+    private final double mctrl_i = 1.5 * 0.5 * mctrl_f; // using 0.5*2 seemed better on the ground?
+    private final double mctrl_d = 0.1 * mctrl_p;
 
     // max wheel tangent speed, m/s
     public double TIC_PER_REV = 480; // confirmed by simple experiment

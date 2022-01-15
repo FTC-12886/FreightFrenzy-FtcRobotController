@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.test;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeRegistrar;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 
 @Autonomous(name="Obj Detect Test", group="ML")
+@Disabled
 public class ObjDetectOpMode extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {

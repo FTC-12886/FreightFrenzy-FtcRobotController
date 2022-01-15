@@ -8,10 +8,12 @@ import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 @Config
 @Autonomous
+@Disabled
 public class TelemetryPacketTest extends LinearOpMode {
     public static double CIRCLE_X = 0;
     public static double CIRCLE_Y = 0;
@@ -22,7 +24,7 @@ public class TelemetryPacketTest extends LinearOpMode {
     public static double Y1 = 0;
     public static double X2 = 0.25;
     public static double Y2 = 0.25;
-    private FtcDashboard dashboard = FtcDashboard.getInstance();
+    private final FtcDashboard dashboard = FtcDashboard.getInstance();
     @Override
     public void runOpMode() throws InterruptedException {
 

@@ -30,21 +30,16 @@
 package org.firstinspires.ftc.teamcode;
 
 // import com.acmerobotics.dashboard.FtcDashboard;
-import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.State;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -71,12 +66,12 @@ import java.util.List;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="left red, hub, park warehouse", group="Iterative Opmode", preselectTeleOp = "wroking Teleop")
+@Autonomous(name="left red, hub, park warehouse", group="Red", preselectTeleOp = "wroking Teleop")
 
 public class LeftRedHubWarehouse extends OpMode
 {
     // Declare OpMode members.
-    private ElapsedTime runtime = new ElapsedTime();
+    private final ElapsedTime runtime = new ElapsedTime();
     private DcMotor rearRightDrive = null;
     private DcMotor rearLeftDrive = null;
     private DcMotor frontRightDrive = null;
@@ -84,7 +79,7 @@ public class LeftRedHubWarehouse extends OpMode
     private DcMotor armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
-    private DigitalChannel armLimit;
+//    private DigitalChannel armLimit;
     private State autonomousState = State.EXIT_START;
     private DistanceSensor rearDistance;
     private BNO055IMU imu;
@@ -115,8 +110,8 @@ public class LeftRedHubWarehouse extends OpMode
         clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
         clawRight = hardwareMap.get(DcMotor.class, "claw_right");
 
-        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
-        armLimit.setMode(DigitalChannel.Mode.INPUT);
+//        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
+//        armLimit.setMode(DigitalChannel.Mode.INPUT);
 
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -195,7 +190,7 @@ public class LeftRedHubWarehouse extends OpMode
         double rightPower = 0;
         double clawLeftPower = 0;
         double clawRightPower = 0;
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Status", "Run Time: " + runtime);
 
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         double angle = angles.firstAngle;
@@ -272,6 +267,15 @@ public class LeftRedHubWarehouse extends OpMode
                 if (rearCm <= 20 || runtime.seconds() > 10) {
                     leftPower = 0;
                     rightPower = 0;
+                    autonomousState = State.TURN_END;
+                }
+                break;
+            case TURN_END:
+                leftPower = 0;
+                rightPower = 0.5;
+                if (angle >= 185) {
+                    leftPower = 0;
+                    rightPower = 0;
                     autonomousState = State.END;
                 }
                 break;
@@ -342,6 +346,7 @@ public class LeftRedHubWarehouse extends OpMode
         DROP_BLOCK,
         TURN_WAREHOUSE,
         DRIVE_WAREHOUSE,
+        TURN_END,
         DRIVE_REVERSE,
         END
     }

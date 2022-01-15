@@ -71,7 +71,7 @@ import java.util.List;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="right blue, hub, park warehouse", group="Iterative Opmode", preselectTeleOp = "wroking Teleop")
+@Autonomous(name="right blue, hub, park warehouse", group="Blue", preselectTeleOp = "wroking Teleop")
 
 public class RightBlueHubWarehouse extends OpMode
 {
@@ -216,9 +216,9 @@ public class RightBlueHubWarehouse extends OpMode
                 }
                 break;
             case TURN_HUB:
-                leftPower = 0.75;
-                rightPower = 0;
-                if (angle <= -45) {
+                leftPower = 0.00;
+                rightPower = 0.75;
+                if (angle >= 45) {
                     leftPower = 0;
                     rightPower = 0;
                     runtime.reset();
@@ -228,7 +228,7 @@ public class RightBlueHubWarehouse extends OpMode
             case DRIVE_FORWARDS:
                 leftPower = 0.75;
                 rightPower = 0.75;
-                if (runtime.milliseconds() >= 750) {
+                if (runtime.milliseconds() >= 500) {
                     runtime.reset();
                     autonomousState = State.DROP_BLOCK;
                 }
@@ -254,9 +254,9 @@ public class RightBlueHubWarehouse extends OpMode
                 }
                 break;
             case TURN_WAREHOUSE:
-                leftPower = -0.75;
-                rightPower = 0;
-                if (angle >= 75) {
+                leftPower = 0.00;
+                rightPower = -0.75;
+                if (angle <= -75) {
                     leftPower = 0;
                     rightPower = 0;
                     armLift.setTargetPosition(-300);
@@ -269,7 +269,7 @@ public class RightBlueHubWarehouse extends OpMode
             case DRIVE_WAREHOUSE:
                 leftPower = -1;
                 rightPower = -1;
-                if (rearCm <= 20 || runtime.seconds() > 10) {
+                if (rearCm <= 30 || runtime.seconds() > 10) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;

@@ -100,7 +100,7 @@ public class RedPark extends OpMode {
 
     private String armState = "0block"; // <-- Using string comparators to better explain...
                                         // ...what is happening with the armState
-    private String driveState = "step1";
+    private final String driveState = "step1";
     private String autoState = "slidePark";
 
     public Orientation angles;
@@ -109,7 +109,7 @@ public class RedPark extends OpMode {
     private boolean arcadeMode = false;
     private boolean manualControl = false;
 
-    private int gyroCalibratedCount = 0;
+    private final int gyroCalibratedCount = 0;
     private float manualArmPower;
 
     private MecanumAutonomousAdvanced mecanum;
@@ -117,13 +117,13 @@ public class RedPark extends OpMode {
     private ElapsedTime time;
 
         // hsvValues is an array that will hold the hue, saturation, and value information.
-    private float hsvValues[] = {0F, 0F, 0F};
+    private final float[] hsvValues = {0F, 0F, 0F};
 
-    private float values[] = hsvValues;
+    private final float[] values = hsvValues;
 
         // sometimes it helps to multiply the raw RGB values with a scale factor
         // to amplify/attentuate the measured values.
-    private double SCALE_FACTOR = 255;
+    private final double SCALE_FACTOR = 255;
     private View relativeLayout;
     private int relativeLayoutId;
     private int currentPos; 
@@ -235,7 +235,7 @@ public class RedPark extends OpMode {
         rightDist = hardwareMap.get(DistanceSensor.class, "rightDist");
 
         // values is a reference to the hsvValues array.
-        float values[] = hsvValues;
+        float[] values = hsvValues;
 
 
         // get a reference to the RelativeLayout so we can change the background

@@ -113,7 +113,7 @@ public class MLAutonomous extends OpMode
     private TFObjectDetector tfod;
 
     // Declare OpMode members.
-    private ElapsedTime runtime = new ElapsedTime();
+    private final ElapsedTime runtime = new ElapsedTime();
     private DcMotor leftDrive = null;
     private DcMotor rightDrive = null;
     private Manipulator manipulator;

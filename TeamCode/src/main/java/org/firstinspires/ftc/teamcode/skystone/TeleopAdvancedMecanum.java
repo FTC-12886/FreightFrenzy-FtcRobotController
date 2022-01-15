@@ -95,7 +95,7 @@ public class TeleopAdvancedMecanum extends OpMode {
     private DistanceSensor rightDist;
     private String armState = "0block"; // <-- Using string comparators to better explain...
                                         // ...what is happening with the armState
-    private String driveState = "step1";
+    private final String driveState = "step1";
 
     public Orientation angles;
     public Acceleration gravity;
@@ -103,7 +103,7 @@ public class TeleopAdvancedMecanum extends OpMode {
     private boolean arcadeMode = false;
     private boolean manualControl = false;
     //remove? Is not used
-    private int gyroCalibratedCount = 0;
+    private final int gyroCalibratedCount = 0;
     
     private float manualArmPower;
 
@@ -112,13 +112,13 @@ public class TeleopAdvancedMecanum extends OpMode {
     private ElapsedTime time;
 
         // hsvValues is an array that will hold the hue, saturation, and value information.
-    private float hsvValues[] = {0F, 0F, 0F};
+    private final float[] hsvValues = {0F, 0F, 0F};
 
-      private float values[] = hsvValues;
+      private final float[] values = hsvValues;
 
         // sometimes it helps to multiply the raw RGB values with a scale factor
         // to amplify/attentuate the measured values.
-    private double SCALE_FACTOR = 255;
+    private final double SCALE_FACTOR = 255;
     private View relativeLayout;
     private int relativeLayoutId;
 
@@ -214,7 +214,7 @@ public class TeleopAdvancedMecanum extends OpMode {
 
 
         // values is a reference to the hsvValues array.
-        float values[] = hsvValues;
+        float[] values = hsvValues;
 
 
         // get a reference to the RelativeLayout so we can change the background

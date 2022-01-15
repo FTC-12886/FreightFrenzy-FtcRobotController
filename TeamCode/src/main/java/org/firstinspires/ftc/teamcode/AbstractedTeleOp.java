@@ -60,7 +60,7 @@ import java.util.List;
 public class AbstractedTeleOp extends OpMode
 {
     // Declare OpMode members.
-    private ElapsedTime runtime = new ElapsedTime();
+    private final ElapsedTime runtime = new ElapsedTime();
     private DcMotor rearRightDrive = null;
     private DcMotor rearLeftDrive = null;
     private DcMotor frontRightDrive = null;

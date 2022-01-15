@@ -80,9 +80,9 @@ public class AutonomousAdvancedMecanum extends OpMode {
     private AndroidGyroscope Gyro; 
 
     private DcMotor manArm;
-    private boolean rightBumperDown = false;
-    private boolean leftBumperDown = false;
-    private boolean rightStickClick = false;
+    private final boolean rightBumperDown = false;
+    private final boolean leftBumperDown = false;
+    private final boolean rightStickClick = false;
 
     private Servo elbow;
     private Servo hand;
@@ -99,16 +99,16 @@ public class AutonomousAdvancedMecanum extends OpMode {
 
     private String armState = "0block"; // <-- Using string comparators to better explain...
                                         // ...what is happening with the armState
-    private String driveState = "step1";
+    private final String driveState = "step1";
     private String autoState = "attackSkystone";
 
     public Orientation angles;
     public Acceleration gravity;
 
-    private boolean arcadeMode = false;
-    private boolean manualControl = false;
+    private final boolean arcadeMode = false;
+    private final boolean manualControl = false;
 
-    private int gyroCalibratedCount = 0;
+    private final int gyroCalibratedCount = 0;
     private float manualArmPower;
 
     private MecanumAutonomousAdvanced mecanum;
@@ -116,13 +116,13 @@ public class AutonomousAdvancedMecanum extends OpMode {
     private ElapsedTime time;
 
     // hsvValues is an array that will hold the hue, saturation, and value information.
-    private float hsvValues[] = {0F, 0F, 0F};
+    private final float[] hsvValues = {0F, 0F, 0F};
 
-    private float values[] = hsvValues;
+    private final float[] values = hsvValues;
 
     // sometimes it helps to multiply the raw RGB values with a scale factor
     // to amplify/attentuate the measured values.
-    private double SCALE_FACTOR = 255;
+    private final double SCALE_FACTOR = 255;
     private View relativeLayout;
     private int relativeLayoutId;
     private int currentPos; 
@@ -190,7 +190,7 @@ public class AutonomousAdvancedMecanum extends OpMode {
       rightDist = hardwareMap.get(DistanceSensor.class, "rightDist");
 
       // values is a reference to the hsvValues array.
-      float values[] = hsvValues;
+      float[] values = hsvValues;
     }
 
     private void gyroLoop() {
