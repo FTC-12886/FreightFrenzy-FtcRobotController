@@ -16,33 +16,29 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FO
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-package org.firstinspires.ftc.teamcode.skystone;
-
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
-import org.firstinspires.ftc.robotcore.external.android.AndroidGyroscope;
-
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.hardware.Servo;
-import java.text.DecimalFormat;
-import com.qualcomm.hardware.bosch.BNO055IMU;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.util.ElapsedTime;
+package org.firstinspires.ftc.teamcode.mecanumbot;
 
 import android.graphics.Color;
 import android.view.View;
 
-import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.android.AndroidGyroscope;
+import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+
+import java.text.DecimalFormat;
 
 /**
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -55,7 +51,7 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
  * or add a @Disabled annotation to prevent this OpMode from being added to the Driver Station
  */
 @Autonomous
-@Disabled
+
 public class RedPark extends OpMode {
     // CONFIGURATION
 
@@ -130,88 +126,49 @@ public class RedPark extends OpMode {
 
     @Override
     public void init() {
-        armState = "0block";
-        motorInit();
-        gyroInit();
-        //gamepadInit(); 
-        sensorInit();
-        // hand.setPosition(0.3);
-        time = new ElapsedTime();
-        time.reset();
+      armState = "0block";
+      motorInit();
+      gyroInit();
+      sensorInit();
+      time = new ElapsedTime();
+      time.reset();
         
     }
 
     @Override
     public void init_loop() {
-        gyroLoop();
+      gyroLoop();
     }
 
     @Override
     public void loop() {
-        telemetry.addData("loop time", time.milliseconds());
-        telemetry.addData("encoder", mecanum.getFrontRight());
-        telemetry.addData("rightdist", rightDist.getDistance(DistanceUnit.CM));
-        telemetry.addData("rearDist", rearDist.getDistance(DistanceUnit.CM)); 
-        telemetry.addData("autoState", autoState);
-        time.reset();
-        gyroLoop();
-        //setManualMode();
-        seeWorld();
-        driveLoop();
-        mecanum.go(); 
-        
-        // if(hsvValues[0] > 100){
-        //   mecanum.setSlide(0.0f);
-        //   mecanum.setFwd(0.0f);
-        // }
-        // else{
-        //   mecanum.setSlide(0.5f);
-        //   mecanum.setFwd(-0.09f);
-        // }
-        // mecanum.go();
-
-
-        // if(frontDistance.getDistance(DistanceUnit.CM) < 50){
-        // // mecanum.setSlide(0.0f);
-        //   mecanum.setFwd(0.0f);
-        // }
-        // else{
-        //   // mecanum.setSlide(0.5f);
-        //   mecanum.setFwd(-0.35f);
-        // }
-        // mecanum.go();
-        
-        // selectPosition();
-        // moveArm();
-        // dropBlock(); // servo comm,
-        // //resetArm();
-
-        // frontColor.RGBtoHSV((int))
-        // telemetry.addData("JoystickSlide", mecanum.joystick_side());
-        // telemetry.addData("JoystickRotate", mecanum.joystick_rotate());
-        // telemetry.addData("JoystickFwd", mecanum.joystick_fwd());
-
+      telemetry.addData("autoState", autoState);
+      time.reset();
+      gyroLoop();
+      seeWorld();
+      driveLoop();
+      mecanum.go(); 
     }
 
     private void gamepadInit() {
-        //gamepad1.setJoystickDeadzone(0.2f);
+      //gamepad1.setJoystickDeadzone(0.2f);
     }
 
     private void motorInit() {
-        mecanum = new MecanumAutonomousAdvanced();
-        mecanum.init(gamepad1, hardwareMap);
+      mecanum = new MecanumAutonomousAdvanced();
+      mecanum.init(gamepad1, hardwareMap);
 
-        manArm = hardwareMap.get(DcMotor.class, "manArm");
-        hand = hardwareMap.get(Servo.class, "leHand");
+      manArm = hardwareMap.get(DcMotor.class, "manArm");
+      hand = hardwareMap.get(Servo.class, "leHand");
 
-        leftFound = hardwareMap.get(Servo.class, "leftFound");
-        rightFound = hardwareMap.get(Servo.class, "rightFound");
+      leftFound = hardwareMap.get(Servo.class, "leftFound");
+      rightFound = hardwareMap.get(Servo.class, "rightFound");
 
-        manArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        manArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        manArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER); // TODO IS THIS THE RIGHT MODE?! SEE RUN_TO_POSITION
+      manArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+      manArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      manArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER); // TODO IS THIS THE RIGHT MODE?! SEE RUN_TO_POSITION
 
-        telemetry.addData("MOTORS", "Initialized");
+      telemetry.addData("MOTORS", "Initialized");
     }
 
     private void gyroInit() {
@@ -417,7 +374,7 @@ public class RedPark extends OpMode {
                     // mecanum.setFwd(-0.5f);
                 } 
                 else {
-                    autoState = "slideDatBitch"; 
+                    autoState = "slideOver"; 
                     // stayOnTarget(2, -2);
                     // hugWall(5, 2);
                     // mecanum.setSlide(0.0f);
@@ -425,8 +382,8 @@ public class RedPark extends OpMode {
                 }
             break; 
 
-            case "slideDatBitch":
-                if(mecanum.getFrontRight() < 1400){
+            case "slideOver":
+                if(mecanum.getFrontRight() < 1100){
                     stayOnTarget(2, -2);
                     hugWall(5, 2);
                     mecanum.setSlide(0.7f); 
@@ -440,7 +397,7 @@ public class RedPark extends OpMode {
             break;
 
             case "driveForward":
-                if(rearDist.getDistance(DistanceUnit.CM) < 62){
+                if(rearDist.getDistance(DistanceUnit.CM) < 66){
                     stayOnTarget(2, -2);
                     mecanum.setFwd(-0.5f);
                 }

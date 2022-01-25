@@ -5,7 +5,7 @@
 //      user-centric mode: if provided a robot heading, can give commands in world frame (vs. local robot frame)
 //      frame selection: command robot rotation movement about arbitrary points (e.g. the end effector)
 
-package org.firstinspires.ftc.teamcode.skystone;
+package org.firstinspires.ftc.teamcode.mecanumbot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -76,6 +76,7 @@ public class MecanumDriveAdvanced {
         // set motor properties
         for (i=0; i<4; i++){
             wheel_motors[i].setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            wheel_motors[i].setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             wheel_motors[i].setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             wheel_motors[i].setVelocityPIDFCoefficients(mctrl_p, mctrl_i, mctrl_d, mctrl_f);
         }
@@ -202,6 +203,10 @@ public class MecanumDriveAdvanced {
     }
     double max4(double a, double b, double c, double d){
         return Math.max(Math.max(a,b), Math.max(c,d));
+    }
+    
+    public int getFrontRight(){
+        return wheel_motors[1].getCurrentPosition();
     }
 
     // put joystick reads as functions so remapping is easy

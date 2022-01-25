@@ -27,24 +27,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.autonomous;
 
 // import com.acmerobotics.dashboard.FtcDashboard;
-import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import org.firstinspires.ftc.robotcore.external.State;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -54,6 +50,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.Manipulator;
+import org.firstinspires.ftc.teamcode.ObjDetect;
 
 import java.util.List;
 
@@ -71,12 +69,12 @@ import java.util.List;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="right blue, hub, park warehouse", group="Blue", preselectTeleOp = "wroking Teleop")
+@Autonomous(name="right red, hub, park warehouse", group="Red", preselectTeleOp = "wroking Teleop")
 
-public class RightBlueHubWarehouse extends OpMode
+public class RightRedHubWarehouse extends OpMode
 {
     // Declare OpMode members.
-    private ElapsedTime runtime = new ElapsedTime();
+    private final ElapsedTime runtime = new ElapsedTime();
     private DcMotor rearRightDrive = null;
     private DcMotor rearLeftDrive = null;
     private DcMotor frontRightDrive = null;
@@ -84,7 +82,7 @@ public class RightBlueHubWarehouse extends OpMode
     private DcMotor armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
-    private DigitalChannel armLimit;
+    //    private DigitalChannel armLimit;
     private State autonomousState = State.EXIT_START;
     private DistanceSensor rearDistance;
     private BNO055IMU imu;
@@ -115,8 +113,8 @@ public class RightBlueHubWarehouse extends OpMode
         clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
         clawRight = hardwareMap.get(DcMotor.class, "claw_right");
 
-        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
-        armLimit.setMode(DigitalChannel.Mode.INPUT);
+//        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
+//        armLimit.setMode(DigitalChannel.Mode.INPUT);
 
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -128,10 +126,10 @@ public class RightBlueHubWarehouse extends OpMode
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-        rearRightDrive.setDirection(DcMotor.Direction.FORWARD);
-        rearLeftDrive.setDirection(DcMotor.Direction.REVERSE);
-        frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
-        frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
+        rearRightDrive.setDirection(DcMotor.Direction.REVERSE);
+        rearLeftDrive.setDirection(DcMotor.Direction.FORWARD);
+        frontRightDrive.setDirection(DcMotor.Direction.REVERSE);
+        frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
 
         rearRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rearLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -195,16 +193,19 @@ public class RightBlueHubWarehouse extends OpMode
         double rightPower = 0;
         double clawLeftPower = 0;
         double clawRightPower = 0;
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Status", "Run Time: " + runtime);
 
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         double angle = angles.firstAngle;
         double rearCm = rearDistance.getDistance(DistanceUnit.CM);
+        double encoder = frontRightDrive.getCurrentPosition();
 
 
         telemetry.addData("DISTANCE", rearCm);
         telemetry.addData("STATE", autonomousState);
         telemetry.addData("ANGLE", angle);
+        telemetry.addData("ENCODER", encoder);
+
         switch (autonomousState) {
             case EXIT_START:
                 leftPower = 1;
@@ -223,12 +224,20 @@ public class RightBlueHubWarehouse extends OpMode
                     rightPower = 0;
                     runtime.reset();
                     autonomousState = State.DRIVE_FORWARDS;
+                    frontRightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 }
                 break;
             case DRIVE_FORWARDS:
                 leftPower = 0.75;
                 rightPower = 0.75;
-                if (runtime.milliseconds() >= 500) {
+                int target;
+                if (position == Manipulator.ArmPosition.MIDDLE)
+                    target = 220;
+                else if (position == Manipulator.ArmPosition.BOTTOM)
+                    target = 200;
+                else
+                    target = 280;
+                if (encoder >= target) {
                     runtime.reset();
                     autonomousState = State.DROP_BLOCK;
                 }
@@ -241,12 +250,13 @@ public class RightBlueHubWarehouse extends OpMode
                     clawRightPower = 0;
                     runtime.reset();
                     autonomousState = State.DRIVE_REVERSE;
+                    frontRightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 }
                 break;
             case DRIVE_REVERSE:
                 leftPower = -1;
                 rightPower = -1;
-                if (runtime.milliseconds() >= 500) {
+                if (encoder <= -250) {
                     leftPower = 0;
                     rightPower = 0;
                     runtime.reset();
@@ -254,9 +264,9 @@ public class RightBlueHubWarehouse extends OpMode
                 }
                 break;
             case TURN_WAREHOUSE:
-                leftPower = 0.00;
-                rightPower = -0.75;
-                if (angle <= -75) {
+                leftPower = -0.75;
+                rightPower = 0;
+                if (angle >= 75) {
                     leftPower = 0;
                     rightPower = 0;
                     armLift.setTargetPosition(-300);
@@ -269,7 +279,16 @@ public class RightBlueHubWarehouse extends OpMode
             case DRIVE_WAREHOUSE:
                 leftPower = -1;
                 rightPower = -1;
-                if (rearCm <= 30 || runtime.seconds() > 10) {
+                if (rearCm <= 20 || runtime.seconds() > 10) {
+                    leftPower = 0;
+                    rightPower = 0;
+                    autonomousState = State.END;
+                }
+                break;
+            case TURN_END:
+                leftPower = 0;
+                rightPower = 0.5;
+                if (angle >= 185) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;
@@ -281,10 +300,14 @@ public class RightBlueHubWarehouse extends OpMode
                 break;
 
         }
-        rearLeftDrive.setPower(leftPower);
-        rearRightDrive.setPower(rightPower);
-        frontLeftDrive.setPower(leftPower);
-        frontRightDrive.setPower(rightPower);
+        rearLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rearRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        frontLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        frontRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rearLeftDrive.setPower(leftPower*0.6);
+        rearRightDrive.setPower(rightPower*0.6);
+        frontLeftDrive.setPower(leftPower*0.6);
+        frontRightDrive.setPower(rightPower*0.6);
         clawLeft.setPower(clawLeftPower);
         clawRight.setPower(clawRightPower);
 
@@ -342,6 +365,7 @@ public class RightBlueHubWarehouse extends OpMode
         DROP_BLOCK,
         TURN_WAREHOUSE,
         DRIVE_WAREHOUSE,
+        TURN_END,
         DRIVE_REVERSE,
         END
     }

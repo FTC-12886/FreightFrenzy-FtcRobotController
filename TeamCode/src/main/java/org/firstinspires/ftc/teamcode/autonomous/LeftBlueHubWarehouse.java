@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.autonomous;
 
 // import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -54,6 +54,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.Manipulator;
+import org.firstinspires.ftc.teamcode.ObjDetect;
 
 import java.util.List;
 
@@ -71,9 +73,9 @@ import java.util.List;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="left red, storage, park warehouse", group="Red", preselectTeleOp = "wroking Teleop")
+@Autonomous(name="left blue, hub, park warehouse", group="Blue", preselectTeleOp = "wroking Teleop")
 
-public class LeftRedStorageWarehouse extends OpMode
+public class LeftBlueHubWarehouse extends OpMode
 {
     // Declare OpMode members.
     private final ElapsedTime runtime = new ElapsedTime();
@@ -89,20 +91,8 @@ public class LeftRedStorageWarehouse extends OpMode
     private DistanceSensor rearDistance;
     private BNO055IMU imu;
 
-    public static double RIGHT_BOUNDARY = 0.67;
-    public static double LEFT_BOUNDARY = 0.33;
-    public static double WIDTH_IGNORE = 0.25;
-    public static double HEIGHT_IGNORE = 0.5;
-    private static final String[] COLORS = new String[]{"blue", "green", "yellow", "purple", "teal"};
-    private static final String TFOD_MODEL_FILE = AppUtil.FIRST_FOLDER + "/tflitemodels/TeamElement.tflite";
-    private static final String[] LABELS = {
-            "Team"
-    };
-    private static final String VUFORIA_KEY =
-            "ASg2QBr/////AAABmU3Gzjd/akXrk1NzMQrLNgN6wxZIJ3H7AHf8eU6cL+4hcspa6m1glKBeuuSXaELDtK5J81Ewk7+bYxWFk66Y8qupXK8Hqo81er+2T7R7gfZ5O+dCnJpBmU394oA0PrT2L1qAn3ArLA9bkjNM7xauWiff4YtcuSyDBbBGcMJz1BUDMSJ5az94/XlX+d3ATUBiR3T82RSPXZfv6dn+TvIDr1DqLNwgQnzgTPWZwgITgvAAscBjxETX4CgzThrOShqVkKxAtWOyj+uuU53UIhNHsVMEsJuafMqg+Mhkp6c/+VP6LoFPDJwGwdMxrFByCf2GAKkxmWFTQzreHtwVsN2u5O8wXOGlL5WCi3L1R5Iw7MaW";
-    private VuforiaLocalizer vuforia;
-    private TFObjectDetector tfod;
-
+    private ObjDetect objDetect;
+    private Manipulator.ArmPosition position;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -140,10 +130,10 @@ public class LeftRedStorageWarehouse extends OpMode
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-        rearRightDrive.setDirection(DcMotor.Direction.FORWARD);
-        rearLeftDrive.setDirection(DcMotor.Direction.REVERSE);
-        frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
-        frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
+        rearRightDrive.setDirection(DcMotor.Direction.REVERSE);
+        rearLeftDrive.setDirection(DcMotor.Direction.FORWARD);
+        frontRightDrive.setDirection(DcMotor.Direction.REVERSE);
+        frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
 
         rearRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rearLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -152,6 +142,7 @@ public class LeftRedStorageWarehouse extends OpMode
 
 
         initGyro();
+        initObjDetect();
         // initVuforia();
         // initTfod();
         // Tell the driver that initialization is complete.
@@ -163,7 +154,22 @@ public class LeftRedStorageWarehouse extends OpMode
      */
     @Override
     public void init_loop() {
-
+        switch (objDetect.getPosition()) {
+            case 1:
+                position = Manipulator.ArmPosition.BOTTOM;
+                break;
+            case 2:
+                position = Manipulator.ArmPosition.MIDDLE;
+                break;
+            case 3:
+                position = Manipulator.ArmPosition.TOP;
+                break;
+            case 0:
+            case -1:
+                position = Manipulator.ArmPosition.UNKNOWN;
+                break;
+        }
+        telemetry.addData("position", position);
     }
 
     /*
@@ -171,7 +177,11 @@ public class LeftRedStorageWarehouse extends OpMode
      */
     @Override
     public void start() {
-        armLift.setTargetPosition(-300);
+        if (position == Manipulator.ArmPosition.UNKNOWN) {
+            armLift.setTargetPosition(Manipulator.ArmPosition.TOP.encoderTicks);
+        } else {
+            armLift.setTargetPosition(position.encoderTicks);
+        }
         armLift.setPower(0.3);
         armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         runtime.reset();
@@ -201,16 +211,16 @@ public class LeftRedStorageWarehouse extends OpMode
             case EXIT_START:
                 leftPower = 1;
                 rightPower = 1;
-                if (rearDistance.getDistance(DistanceUnit.CM) > 35) {
+                if (rearCm > 35) {
                     leftPower = 0;
                     rightPower = 0;
-                    autonomousState = State.TURN_STORAGE;
+                    autonomousState = State.TURN_HUB;
                 }
                 break;
-            case TURN_STORAGE:
-                leftPower = 0;
-                rightPower = 0.75;
-                if (angle >= 65) {
+            case TURN_HUB:
+                leftPower = 0.75;
+                rightPower = 0;
+                if (angle <= -45) {
                     leftPower = 0;
                     rightPower = 0;
                     runtime.reset();
@@ -218,9 +228,9 @@ public class LeftRedStorageWarehouse extends OpMode
                 }
                 break;
             case DRIVE_FORWARDS:
-                leftPower = 1;
-                rightPower = 1;
-                if (runtime.milliseconds() >= 250) {
+                leftPower = 0.75;
+                rightPower = 0.75;
+                if (runtime.milliseconds() >= 450) {
                     runtime.reset();
                     autonomousState = State.DROP_BLOCK;
                 }
@@ -238,10 +248,30 @@ public class LeftRedStorageWarehouse extends OpMode
             case DRIVE_REVERSE:
                 leftPower = -1;
                 rightPower = -1;
-                armLift.setTargetPosition(-300);
-                armLift.setPower(0.6);
-                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                if (rearDistance.getDistance(DistanceUnit.CM) <= 50) {
+                if (runtime.milliseconds() >= 500) {
+                    leftPower = 0;
+                    rightPower = 0;
+                    runtime.reset();
+                    autonomousState = State.TURN_WAREHOUSE;
+                }
+                break;
+            case TURN_WAREHOUSE:
+                leftPower = 0.00;
+                rightPower = -0.75;
+                if (angle <= -85) {
+                    leftPower = 0;
+                    rightPower = 0;
+                    armLift.setTargetPosition(-915);
+                    armLift.setPower(0.6);
+                    armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    runtime.reset();
+                    autonomousState = State.DRIVE_WAREHOUSE;
+                }
+                break;
+            case DRIVE_WAREHOUSE:
+                leftPower = -1;
+                rightPower = -1;
+                if (rearCm <= 30 || runtime.seconds() > 10) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;
@@ -253,10 +283,10 @@ public class LeftRedStorageWarehouse extends OpMode
                 break;
 
         }
-        rearLeftDrive.setPower(leftPower);
-        rearRightDrive.setPower(rightPower);
-        frontLeftDrive.setPower(leftPower);
-        frontRightDrive.setPower(rightPower);
+        rearLeftDrive.setPower(leftPower*0.4);
+        rearRightDrive.setPower(rightPower*0.4);
+        frontLeftDrive.setPower(leftPower*0.4);
+        frontRightDrive.setPower(rightPower*0.4);
         clawLeft.setPower(clawLeftPower);
         clawRight.setPower(clawRightPower);
 
@@ -283,13 +313,37 @@ public class LeftRedStorageWarehouse extends OpMode
         imu.initialize(parameters);
     }
 
+    private void initObjDetect() {
+        String tfodModelFile = AppUtil.FIRST_FOLDER + "/tflitemodels/TeamElement.tflite";
+        String[] labels = {
+                "Team"
+        };
+
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        parameters.vuforiaLicenseKey = "ASg2QBr/////AAABmU3Gzjd/akXrk1NzMQrLNgN6wxZIJ3H7AHf8eU6cL+4hcspa6m1glKBeuuSXaELDtK5J81Ewk7+bYxWFk66Y8qupXK8Hqo81er+2T7R7gfZ5O+dCnJpBmU394oA0PrT2L1qAn3ArLA9bkjNM7xauWiff4YtcuSyDBbBGcMJz1BUDMSJ5az94/XlX+d3ATUBiR3T82RSPXZfv6dn+TvIDr1DqLNwgQnzgTPWZwgITgvAAscBjxETX4CgzThrOShqVkKxAtWOyj+uuU53UIhNHsVMEsJuafMqg+Mhkp6c/+VP6LoFPDJwGwdMxrFByCf2GAKkxmWFTQzreHtwVsN2u5O8wXOGlL5WCi3L1R5Iw7MaW";
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+        VuforiaLocalizer vuforia = ClassFactory.getInstance().createVuforia(parameters);
+
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.8f;
+        tfodParameters.isModelTensorFlow2 = true;
+        tfodParameters.inputSize = 320;
+        TFObjectDetector tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromFile(tfodModelFile, labels);
+
+        ObjDetect.ProcessingParameters processingParameters = new ObjDetect.ProcessingParameters();
+        this.objDetect = new ObjDetect(tfod, processingParameters);
+    }
 
     public enum State {
         EXIT_START,
-        TURN_90,
+        TURN_HUB,
         DRIVE_FORWARDS,
         DROP_BLOCK,
-        TURN_STORAGE,
+        TURN_WAREHOUSE,
+        DRIVE_WAREHOUSE,
         DRIVE_REVERSE,
         END
     }

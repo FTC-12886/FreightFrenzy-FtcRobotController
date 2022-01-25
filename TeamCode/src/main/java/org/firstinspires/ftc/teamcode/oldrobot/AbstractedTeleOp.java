@@ -27,18 +27,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.oldrobot;
 
-import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
-
-import java.util.List;
 
 /**
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -54,16 +50,14 @@ import java.util.List;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="No Manipulator Teleop", group="Iterative Opmode")
-@Disabled
-public class NoManipulator extends OpMode
+@TeleOp(name="Abstracted Teleop Old robot", group="Iterative Opmode")
+
+public class AbstractedTeleOp extends OpMode
 {
     // Declare OpMode members.
     private final ElapsedTime runtime = new ElapsedTime();
-    private DcMotor rearRightDrive = null;
-    private DcMotor rearLeftDrive = null;
-    private DcMotor frontRightDrive = null;
-    private DcMotor frontLeftDrive = null;
+    private DcMotor leftDrive = null;
+    private DcMotor rightDrive = null;
     private Manipulator manipulator;
     /*
      * Code to run ONCE when the driver hits INIT
@@ -72,27 +66,22 @@ public class NoManipulator extends OpMode
     public void init() {
         telemetry.addData("Status", "Initialized");
 
-        List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
-
-        for (LynxModule hub : allHubs) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-        }
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        rearRightDrive  = hardwareMap.get(DcMotor.class, "rear_right_drive");
-        rearLeftDrive = hardwareMap.get(DcMotor.class, "rear_left_drive");
-        frontRightDrive  = hardwareMap.get(DcMotor.class, "front_right_drive");
-        frontLeftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
+        leftDrive  = hardwareMap.get(DcMotor.class, "chassisLeft");
+        rightDrive = hardwareMap.get(DcMotor.class, "chassisRight");
 
-
+        manipulator = new Manipulator(
+                hardwareMap.get(DcMotor.class, "armLift"),
+                hardwareMap.get(DcMotor.class, "clawLeft"),
+                hardwareMap.get(DcMotor.class, "clawRight"));
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-        rearRightDrive.setDirection(DcMotor.Direction.REVERSE);
-        rearLeftDrive.setDirection(DcMotor.Direction.FORWARD);
-        frontRightDrive.setDirection(DcMotor.Direction.REVERSE);
-        frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightDrive.setDirection(DcMotor.Direction.FORWARD);
+
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
     }
@@ -131,14 +120,49 @@ public class NoManipulator extends OpMode
         rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
 
         // Send calculated power to wheels
-        rearLeftDrive.setPower(leftPower);
-        rearRightDrive.setPower(rightPower);
-        frontLeftDrive.setPower(leftPower);
-        frontRightDrive.setPower(rightPower);
-        // Show the elapsed game time and wheel power.
-        telemetry.addData("Status", "Run Time: " + runtime);
-        telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
+        leftDrive.setPower(leftPower);
+        rightDrive.setPower(rightPower);
 
+        // Show the elapsed game time and wheel power.
+        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
+        telemetry.addData("arm pos", manipulator.getArmEncoder());
+
+        // both bumpers = duck mode
+        if (gamepad1.left_bumper && gamepad1.right_bumper) {
+            manipulator.runDuckMode(false);
+        } else if (gamepad1.right_bumper){
+            manipulator.runIntake(false);
+        } else if (gamepad1.left_bumper) {
+            manipulator.runIntake(true);
+        } else {
+            manipulator.runIntake(0);
+        }
+
+        switch (getGamepadButtons(gamepad1)) {
+            case 'a':
+                telemetry.addData("button", "a");
+                manipulator.moveArmToPosition(Manipulator.ArmPosition.GROUND);
+                break;
+            case 'b':
+                telemetry.addData("button", "b");
+                manipulator.moveArmToPosition(Manipulator.ArmPosition.BOTTOM);
+                break;
+            case 'y':
+                telemetry.addData("button", "y");
+                manipulator.moveArmToPosition(Manipulator.ArmPosition.MIDDLE);
+                break;
+            case 'x':
+                telemetry.addData("button", "x");
+                manipulator.moveArmToPosition(Manipulator.ArmPosition.TOP);
+                break;
+        }
+        // SHARED SHIPPING HUB TIPPED - 20 pt!!!!!
+
+        // switch (getGamepadButtons(gamepad1)
+        // level 1 = -230
+        // level 2 = -480
+        // level 3 = -780
     }
 
     /*
@@ -146,6 +170,19 @@ public class NoManipulator extends OpMode
      */
     @Override
     public void stop() {
+    }
+
+    private char getGamepadButtons(Gamepad gamepad) {
+        if (gamepad.a) {
+            return 'a';
+        } else if (gamepad.b) {
+            return 'b';
+        } else if (gamepad.x) {
+            return 'x';
+        } else if (gamepad.y) {
+            return 'y';
+        } else
+            return '\u0000';
     }
 
 }

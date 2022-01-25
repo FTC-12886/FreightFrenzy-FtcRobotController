@@ -16,14 +16,16 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FO
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-package org.firstinspires.ftc.teamcode.skystone;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.android.AndroidGyroscope;
+package org.firstinspires.ftc.teamcode.mecanumbot;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import org.firstinspires.ftc.robotcore.external.State;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.android.AndroidGyroscope; 
 import com.qualcomm.robotcore.hardware.Servo;
 import java.text.DecimalFormat;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -32,14 +34,19 @@ import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
+import android.app.Activity;
 import android.graphics.Color;
 import android.view.View;
-
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.Servo;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 
@@ -54,8 +61,8 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
  * or add a @Disabled annotation to prevent this OpMode from being added to the Driver Station
  */
 @Autonomous
-@Disabled
-public class AutonomousAdvancedMecanum extends OpMode {
+
+public class AutoAdvancedBlue extends OpMode {
     // CONFIGURATION
 
     // Expansion Hub 1:
@@ -81,7 +88,7 @@ public class AutonomousAdvancedMecanum extends OpMode {
 
     private DcMotor manArm;
     private final boolean rightBumperDown = false;
-    private final boolean leftBumperDown = false;
+    private boolean leftBumperDown = false;
     private final boolean rightStickClick = false;
 
     private Servo elbow;
@@ -115,13 +122,13 @@ public class AutonomousAdvancedMecanum extends OpMode {
 
     private ElapsedTime time;
 
-    // hsvValues is an array that will hold the hue, saturation, and value information.
+        // hsvValues is an array that will hold the hue, saturation, and value information.
     private final float[] hsvValues = {0F, 0F, 0F};
 
     private final float[] values = hsvValues;
 
-    // sometimes it helps to multiply the raw RGB values with a scale factor
-    // to amplify/attentuate the measured values.
+        // sometimes it helps to multiply the raw RGB values with a scale factor
+        // to amplify/attentuate the measured values.
     private final double SCALE_FACTOR = 255;
     private View relativeLayout;
     private int relativeLayoutId;
@@ -145,11 +152,11 @@ public class AutonomousAdvancedMecanum extends OpMode {
     @Override
     public void loop() {
       telemetry.addData("autoState", autoState);
-      time.reset();
       gyroLoop();
       seeWorld();
       driveLoop();
       mecanum.go(); 
+      time.reset();
     }
 
     private void motorInit() {
@@ -164,7 +171,7 @@ public class AutonomousAdvancedMecanum extends OpMode {
 
       manArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
       manArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-      manArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER); // TODO IS THIS THE RIGHT MODE?! SEE RUN_TO_POSITION
+      manArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER); 
 
       telemetry.addData("MOTORS", "Initialized");
     }
@@ -198,10 +205,15 @@ public class AutonomousAdvancedMecanum extends OpMode {
       telemetry.addData("HEADING", angles.firstAngle);
     }
 
-    private void manualMoveArm() {
-      manualArmPower = (gamepad1.left_trigger * -1) + (gamepad1.right_trigger);
-      manArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-      manArm.setPower(manualArmPower);
+    private void dropBlock() {
+      if(gamepad1.left_bumper) {
+        if(!leftBumperDown){
+          leftBumperDown = true;
+          hand.setPosition(0.3);
+        }
+      } else {
+        leftBumperDown = false;
+      }
     }
 
     private void seeWorld() {
@@ -213,16 +225,6 @@ public class AutonomousAdvancedMecanum extends OpMode {
     }
 
     private void moveArm() {
-      //telemetry.addData("ManArm", manArm.getCurrentPosition());
-      if(manualControl){
-        manualMoveArm(); // <-- If manual control mode is active...
-                          // ...revert to trigger control.
-                          // RightTrigger = up
-                          // LeftTrigger = down
-        return;          // <-- This will exit the function early so...
-                          // ...the state machine doesn't control the arm
-      }
-
       switch(armState){
         case "0block":
         manArm.setTargetPosition(20);
@@ -287,8 +289,8 @@ public class AutonomousAdvancedMecanum extends OpMode {
           }
           else{
             stayOnTarget(2, -2);
-            mecanum.setSlide(-0.7f);
-            mecanum.setFwd(-0.2f);
+            mecanum.setSlide(0.7f);
+            mecanum.setFwd(0.2f);
           }
         break;
         
@@ -299,7 +301,6 @@ public class AutonomousAdvancedMecanum extends OpMode {
             mecanum.setSlide(0.0f); 
             autoState = "tacticalRetreat";
           } else {
-            stayOnTarget(2, -2);
             mecanum.setFwd(-0.5f);
           }
         break;  
@@ -317,21 +318,21 @@ public class AutonomousAdvancedMecanum extends OpMode {
            
         case "aaaaandSlide":
           moveArm();
-          if(leftDist.getDistance(DistanceUnit.CM) > 60){
+          if(rightDist.getDistance(DistanceUnit.CM) > 60){
             mecanum.setFwd(0.0f); 
             mecanum.setSlide(0.0f);
             autoState = "spinnyBoi";
           } else {
             stayOnTarget(2, -2);
-            mecanum.setSlide(0.65f);
-            mecanum.setFwd(-0.05f); 
+            mecanum.setSlide(-0.65f);
+            mecanum.setFwd(0.05f); 
           } 
         break;
              
         case "spinnyBoi":
           moveArm();
-          if(angles.firstAngle <= 70){
-              mecanum.setRotate(-0.5f);
+          if(angles.firstAngle >= -70){
+              mecanum.setRotate(0.5f);
           } else {
               mecanum.setRotate(0.0f);
               autoState = "chargeBoi";
@@ -340,11 +341,11 @@ public class AutonomousAdvancedMecanum extends OpMode {
             
         case "chargeBoi":
           moveArm();
-          stayOnTarget(92, 88); 
-          if(mecanum.getFrontRight() < 900){
+          stayOnTarget(-88, -92); 
+          if(mecanum.getFrontRight() < 3200){
               mecanum.setFwd(0.9f);
           } else if(rearDist.getDistance(DistanceUnit.CM) > 45){
-              mecanum.setFwd(0.7f);
+              mecanum.setFwd(0.8f);
           } else {
               mecanum.setFwd(0.0f);
               autoState = "spinTowardsFound"; 
@@ -353,8 +354,8 @@ public class AutonomousAdvancedMecanum extends OpMode {
 
         case "spinTowardsFound":
           moveArm(); 
-          if(angles.firstAngle >= 20){
-              mecanum.setRotate(0.5f);
+          if(angles.firstAngle <= -20){
+              mecanum.setRotate(-0.5f);
           } else {
               mecanum.setRotate(0.0f);
               autoState = "driveTowardsFound";
@@ -365,7 +366,7 @@ public class AutonomousAdvancedMecanum extends OpMode {
           moveArm();
           stayOnTarget(2, -2); 
           if(rearDist.getDistance(DistanceUnit.CM) < 69){
-              mecanum.setFwd(-0.75f);
+              mecanum.setFwd(-0.85f);
           } else {
               mecanum.setFwd(0.0f);
               autoState = "lads"; 
@@ -383,8 +384,8 @@ public class AutonomousAdvancedMecanum extends OpMode {
         case "juicyPoints":
           moveArm();
           hand.setPosition(0.3); 
-          if(angles.firstAngle <= 160){
-            mecanum.setRotate(-0.70f);
+          if(angles.firstAngle >= -150){
+            mecanum.setRotate(0.60f);
           } else {
             mecanum.setRotate(0.0f); 
             autoState = "salad"; 
@@ -396,8 +397,8 @@ public class AutonomousAdvancedMecanum extends OpMode {
           armState = "0block"; 
           moveArm();
           stayOnTarget(178,-178);
-          if(frontRange.getDistance(DistanceUnit.CM) <= 80){
-            mecanum.setFwd(0.60f); 
+          if(frontRange.getDistance(DistanceUnit.CM) <= 75){
+            mecanum.setFwd(0.70f); 
           } else {
             mecanum.setFwd(0.0f); 
             autoState = "deadBodies"; 
@@ -428,8 +429,8 @@ public class AutonomousAdvancedMecanum extends OpMode {
         
         case "spinFound":
           moveArm();
-          if(angles.firstAngle < 0 || angles.firstAngle >= 95){
-            mecanum.setRotate(0.65f);
+          if(angles.firstAngle > 0 || angles.firstAngle <= -95){
+            mecanum.setRotate(-0.65f);
           } else {
             mecanum.setRotate(0.0f);
             autoState = "releaseFound";  
@@ -437,7 +438,7 @@ public class AutonomousAdvancedMecanum extends OpMode {
         break; 
 
         case "releaseFound":
-          stayOnTarget(92, 88); 
+          stayOnTarget(-88, -92); 
           leftFound.setPosition(1);
           rightFound.setPosition(0); 
           if(leftFound.getPosition() == 1){
@@ -446,10 +447,10 @@ public class AutonomousAdvancedMecanum extends OpMode {
         break;
 
         case "slideToLeft":
-          stayOnTarget(92, 88); 
-          if(leftDist.getDistance(DistanceUnit.CM) > 20){
-            mecanum.setSlide(-0.8f);
-            mecanum.setFwd(0.05f);
+          stayOnTarget(-88, -92); 
+          if(rightDist.getDistance(DistanceUnit.CM) > 20){
+            mecanum.setSlide(0.8f);
+            mecanum.setFwd(-0.05f);
           } else {
             mecanum.setSlide(0.0f);
             mecanum.setFwd(0.0f);
@@ -459,13 +460,15 @@ public class AutonomousAdvancedMecanum extends OpMode {
         break;
 
         case "parkBot":
-          stayOnTarget(92, 88); 
-          if(mecanum.getFrontRight() > currentPos - 1650){
+          stayOnTarget(-88, -92); 
+          telemetry.addData("currentPos:", currentPos); 
+          if(mecanum.getFrontRight() > currentPos - 1400){
             mecanum.setFwd(-0.8f);
           } else {
             mecanum.setFwd(0.0f); 
           }
         break;
+
         }  
     }
 

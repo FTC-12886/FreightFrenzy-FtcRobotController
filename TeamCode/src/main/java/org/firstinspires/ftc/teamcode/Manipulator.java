@@ -152,7 +152,7 @@ public class Manipulator {
         UNKNOWN (0),
         GROUND (-30),
         BOTTOM (-300),
-        MIDDLE (-650),
+        MIDDLE (-550),
         DUCK (-750),
         TOP (-915);
 

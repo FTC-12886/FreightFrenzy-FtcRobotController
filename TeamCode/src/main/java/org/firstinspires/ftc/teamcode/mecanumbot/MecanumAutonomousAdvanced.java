@@ -5,7 +5,7 @@
 //      user-centric mode: if provided a robot heading, can give commands in world frame (vs. local robot frame)
 //      frame selection: command robot rotation movement about arbitrary points (e.g. the end effector)
 
-package org.firstinspires.ftc.teamcode.skystone;
+package org.firstinspires.ftc.teamcode.mecanumbot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -100,7 +100,7 @@ public class MecanumAutonomousAdvanced {
 
     // get IC from string name
     // TODO a better formulation for live updating due to gripper height?
-    public void setCenterCoords(String name){ // TODO Caleb - Change to enum?
+    public void setCenterCoords(String name){
         switch(name){
             case "fwdblock":
                 center_coords[0] = 0.440;
@@ -114,7 +114,7 @@ public class MecanumAutonomousAdvanced {
                 center_coords[0] = -0.600;
                 center_coords[1] = 0;
                 break;
-            case "robot": // Caleb - is this supposed to fall through?
+            case "robot":
             default:
                 center_coords[0] = 0;
                 center_coords[1] = 0;
@@ -124,25 +124,32 @@ public class MecanumAutonomousAdvanced {
     // go function
     public void go(){
         // get the desired vector from joystick
-        desired_v_global[0] = MAX_WHEEL_SPEED * target_fwd;
-        desired_v_global[1] = MAX_WHEEL_SPEED * target_slide;
-        desired_v_global[2] = MAX_ROTATE * target_rotate;
+        desired_v_global[0] = MAX_WHEEL_SPEED * total_fwd();
+        desired_v_global[1] = MAX_WHEEL_SPEED * total_side();
+        desired_v_global[2] = MAX_ROTATE * total_rotate();
 
         // TODO rotate if user centric mode
         desired_v[0] = desired_v_global[0]*Math.cos(th) + desired_v_global[1]*Math.sin(th);
         desired_v[1] = -desired_v_global[0]*Math.sin(th) + desired_v_global[1]*Math.cos(th);
         desired_v[2] = desired_v_global[2];
 
-        // center/frame selection
         if (joystick_center_robot()){
             setCenterCoords("robot");
         }
-        if (joystick_center_gripper()){
-            setCenterCoords("foundation");
-        }
-        // if (joystick_center_foundation()){
-        //     setCenterCoords("fwdblock");
+        //if (joystick_center_gripper()){
+         //  setCenterCoords("foundation");
         // }
+        // if (joystick_center_foundation()){
+        //     setCenterCoords("foundation");
+        // }else {
+        //     setCenterCoords("robot");
+        // }
+        
+        if (joystick_left_trigger()){
+            setCenterCoords("0block");
+        } else {
+            setCenterCoords("robot"); 
+        }
 
         for (i=0; i<4; i++){
             // get local velocity at each wheel. translation plus cross product
@@ -160,11 +167,11 @@ public class MecanumAutonomousAdvanced {
             // a nonlinear mapping to maximize speed
             // multiply wheel speeds so the maximum magnitude is 1?
             // then scale by the effort percentage
-            effort_current = Math.sqrt(Math.pow(target_fwd,2) + Math.pow(target_slide,2) + Math.pow(target_rotate,2));
+            effort_current = Math.sqrt(Math.pow(total_fwd(),2) + Math.pow(total_side(),2) + Math.pow(total_rotate(),2));
 
             // get max possible length of the joystick vector
-            limit_den = max3(Math.abs(target_fwd), Math.abs(target_slide), Math.abs(target_rotate));
-            effort_max = Math.sqrt(Math.pow(target_fwd / limit_den,2) + Math.pow(target_slide / limit_den,2) + Math.pow(target_rotate / limit_den,2));
+            limit_den = max3(Math.abs(total_fwd()), Math.abs(total_side()), Math.abs(total_rotate()));
+            effort_max = Math.sqrt(Math.pow(total_fwd() / limit_den,2) + Math.pow(total_side() / limit_den,2) + Math.pow(total_rotate() / limit_den,2));
 
             // scale desired twist by this - so joystick at the edge always gets SOME motor to full velocity
             effort_lvl = effort_current / effort_max;
@@ -177,7 +184,7 @@ public class MecanumAutonomousAdvanced {
         }
         else{
             for (i=0; i<4; i++){
-                w[i] /= Math.sqrt(2);
+                w[i] /= Math.sqrt(6);
             }
         }
 
@@ -217,6 +224,18 @@ public class MecanumAutonomousAdvanced {
       target_rotate = -rotate * Math.abs(rotate);
     }
 
+    float total_fwd(){
+        return joystick_fwd() + target_fwd; 
+    }
+
+    float total_side(){
+        return joystick_side() + target_slide; 
+    }
+
+    float total_rotate(){
+        return joystick_rotate() + target_rotate; 
+    }
+
     // put joystick reads as functions so remapping is easy
     float joystick_fwd(){ // also put joystick curves here
         return gamepad1.left_stick_y * Math.abs(gamepad1.left_stick_y);
@@ -241,6 +260,9 @@ public class MecanumAutonomousAdvanced {
     }
     boolean joystick_user_centric(){
         return gamepad1.back;
+    }
+    boolean joystick_left_trigger(){
+        return gamepad1.left_trigger > 0.8f; 
     }
     boolean joystick_robot_centric(){
         return gamepad1.start;

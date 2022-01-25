@@ -241,7 +241,7 @@ public class MLAutonomous extends OpMode
         double leftPower = 0;
         double rightPower = 0;
         // Show the elapsed game time and wheel power.
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Status", "Run Time: " + runtime);
         telemetry.addData("arm pos", manipulator.getArmEncoder());
 
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);

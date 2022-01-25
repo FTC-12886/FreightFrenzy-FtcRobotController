@@ -66,7 +66,7 @@ public class WorkingTeleOp extends OpMode
     private DcMotor armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
-//    private DigitalChannel armLimit;
+    //    private DigitalChannel armLimit;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -103,10 +103,17 @@ public class WorkingTeleOp extends OpMode
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-        rearRightDrive.setDirection(DcMotor.Direction.FORWARD);
-        rearLeftDrive.setDirection(DcMotor.Direction.REVERSE);
-        frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
-        frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
+        rearRightDrive.setDirection(DcMotor.Direction.REVERSE);
+        rearLeftDrive.setDirection(DcMotor.Direction.FORWARD);
+        frontRightDrive.setDirection(DcMotor.Direction.REVERSE);
+        frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
+
+        rearRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rearLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+
 
 
         // Tell the driver that initialization is complete.
@@ -125,9 +132,9 @@ public class WorkingTeleOp extends OpMode
      */
     @Override
     public void start() {
-        armLift.setTargetPosition(-300);
-        armLift.setPower(0.3);
-        armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        armLift.setTargetPosition(-300);
+//        armLift.setPower(0.3);
+//        armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         runtime.reset();
     }
 
@@ -139,20 +146,26 @@ public class WorkingTeleOp extends OpMode
         // Setup a variable for each drive wheel to save power level for telemetry
         double leftPower;
         double rightPower;
+        double fastMode = gamepad1.left_stick_button ? 0.85 : 0.60;
+        if (fastMode > 0.60) {
+            armLift.setTargetPosition(-300);
+            armLift.setPower(0.6);
+            armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
         int armEncoder = armLift.getCurrentPosition();
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // - This uses basic math to combine motions and is easier to drive straight.
         double drive = -gamepad1.left_stick_y;
         double turn  =  gamepad1.right_stick_x;
-        leftPower    = Range.clip(drive + turn, -1.0, 1.0) ;
-        rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
+        leftPower    = Range.clip(drive + turn, -1, 1) ;
+        rightPower   = Range.clip(drive - turn, -1, 1) ;
 
         // Send calculated power to wheels
-        rearLeftDrive.setPower(leftPower);
-        rearRightDrive.setPower(rightPower);
-        frontLeftDrive.setPower(leftPower);
-        frontRightDrive.setPower(rightPower);
+        rearLeftDrive.setPower(leftPower * fastMode);
+        rearRightDrive.setPower(rightPower * fastMode);
+        frontLeftDrive.setPower(leftPower * fastMode);
+        frontRightDrive.setPower(rightPower * fastMode);
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime);
@@ -165,7 +178,7 @@ public class WorkingTeleOp extends OpMode
             clawRight.setPower(-gamepad1.right_trigger);
             int difference = Math.abs(armEncoder - (-650));
             if (difference < 10 || difference > 100) {
-                armLift.setTargetPosition(-650);
+                armLift.setTargetPosition(-680);
                 armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
             }
@@ -215,13 +228,15 @@ public class WorkingTeleOp extends OpMode
                 break;
             case 'd':
                 telemetry.addData("button", "d");
-                armLift.setPower(0.05);
-                armLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                armLift.setTargetPosition(armEncoder + 30);
+                armLift.setPower(0.1);
+                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 break;
             case 'u':
                 telemetry.addData("button", "u");
-                armLift.setPower(0.1);
-                armLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                armLift.setTargetPosition(armEncoder - 30);
+                armLift.setPower(0.3);
+                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 break;
         }
 

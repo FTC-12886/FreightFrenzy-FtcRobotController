@@ -16,33 +16,29 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FO
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-package org.firstinspires.ftc.teamcode.skystone;
-
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
-import org.firstinspires.ftc.robotcore.external.android.AndroidGyroscope;
-
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.hardware.Servo;
-import java.text.DecimalFormat;
-import com.qualcomm.hardware.bosch.BNO055IMU;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.util.ElapsedTime;
+package org.firstinspires.ftc.teamcode.mecanumbot;
 
 import android.graphics.Color;
 import android.view.View;
 
-import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.android.AndroidGyroscope;
+import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+
+import java.text.DecimalFormat;
 
 /**
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -55,7 +51,7 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
  * or add a @Disabled annotation to prevent this OpMode from being added to the Driver Station
  */
 @Autonomous
-@Disabled
+
 public class BluePark extends OpMode {
     // CONFIGURATION
 
@@ -417,7 +413,7 @@ public class BluePark extends OpMode {
                     // mecanum.setFwd(-0.5f);
                 } 
                 else {
-                    autoState = "slideDatBitch"; 
+                    autoState = "slideOver"; 
                     // stayOnTarget(2, -2);
                     // hugWall(5, 2);
                     // mecanum.setSlide(0.0f);
@@ -425,8 +421,8 @@ public class BluePark extends OpMode {
                 }
             break; 
 
-            case "slideDatBitch":
-                if(mecanum.getFrontRight() > -1400){
+            case "slideOver":
+                if(mecanum.getFrontRight() > -1100){
                     stayOnTarget(2, -2);
                     hugWall(5, 2);
                     mecanum.setSlide(-0.7f); 
@@ -440,7 +436,7 @@ public class BluePark extends OpMode {
             break;
 
             case "driveForward":
-                if(rearDist.getDistance(DistanceUnit.CM) < 62){
+                if(rearDist.getDistance(DistanceUnit.CM) < 70){
                     stayOnTarget(2, -2);
                     mecanum.setFwd(-0.5f);
                 }
