@@ -33,11 +33,13 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import java.util.List;
+import ProfileTrapezoidal;
 
 /**
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -63,10 +65,18 @@ public class WorkingTeleOp extends OpMode
     private DcMotor rearLeftDrive = null;
     private DcMotor frontRightDrive = null;
     private DcMotor frontLeftDrive = null;
-    private DcMotor armLift;
+    private DcMotorEx armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
     //    private DigitalChannel armLimit;
+    private double armTargetRaw;
+    private int STATE_HOLD = 0;
+    private int STATE_DUCK_INIT = 1;
+    private int STATE_DUCK_HOLD = 2;
+    private int armState;
+    private ProfileTrapezoidal trap;
+    private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -87,16 +97,27 @@ public class WorkingTeleOp extends OpMode
         frontRightDrive  = hardwareMap.get(DcMotor.class, "front_right_drive");
         frontLeftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
 
-        armLift = hardwareMap.get(DcMotor.class, "arm_lift");
-        clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
-        clawRight = hardwareMap.get(DcMotor.class, "claw_right");
+        armLift = (DcMotorEx) hardwareMap.get(DcMotor.class, "arm_lift");
+        armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // TODO remove here.. and replace with zero-ing procedure
+        armLift.setDirection(DcMotor.Direction.FORWARD);
+        armLift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION); // only have to do once, in setup
+
+        // TODO tuning! leaving these commented to start since Caleb reports the setpoint *is* being reached; the defaults are ok?
+        // need to set both velocity and position coefficients since the position controller just sets velocity goals 
+        //armLift.setVelocityPIDFCoefficients(1.0, 0.1, 0.1, 0.1) // p, i, d, f
+        //armLift.setPositionPIDFCoefficients(1.0) // p
+
+        armTargetRaw = -300; 
+        armState = STATE_HOLD;
+        trap = new ProfileTrapezoidal(2000, 4000); // cruise speed, acceleration // TODO adjust these
+        dt.reset();
 
 //        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
 //        armLimit.setMode(DigitalChannel.Mode.INPUT);
 
-
-        armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armLift.setDirection(DcMotor.Direction.FORWARD);
+        clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
+        clawRight = hardwareMap.get(DcMotor.class, "claw_right");
         clawRight.setDirection(DcMotor.Direction.REVERSE);
         clawLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         clawRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -172,16 +193,10 @@ public class WorkingTeleOp extends OpMode
         telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
         telemetry.addData("arm pos", armLift.getCurrentPosition());
 
-        // both bumpers = duck mode
-        if (gamepad1.right_trigger > 0.00 && gamepad1.left_trigger > 0.00) {
+        // claw controls
+        if (joystick_duck()) { // both bumpers = duck mode
             clawLeft.setPower(gamepad1.left_trigger);
             clawRight.setPower(-gamepad1.right_trigger);
-            int difference = Math.abs(armEncoder - (-650));
-            if (difference < 10 || difference > 100) {
-                armLift.setTargetPosition(-680);
-                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            }
         } else if (gamepad1.right_trigger > 0.0){
             // negative is in
             clawLeft.setPower(gamepad1.right_trigger);
@@ -198,47 +213,6 @@ public class WorkingTeleOp extends OpMode
 //        if (!armLimit.getState()) {
 //            armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 //        }
-        switch (getGamepadButtons(gamepad1)) {
-            case 'a':
-                telemetry.addData("button", "a");
-                armLift.setTargetPosition(-30);
-                armLift.setPower(0.3);
-                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-                break;
-            case 'b':
-                telemetry.addData("button", "b");
-                armLift.setTargetPosition(-300);
-                armLift.setPower(0.6);
-                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-                break;
-            case 'y':
-                telemetry.addData("button", "y");
-                armLift.setTargetPosition(-600);
-                armLift.setPower(0.6);
-                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-                break;
-            case 'x':
-                telemetry.addData("button", "x");
-                armLift.setTargetPosition(-915);
-                armLift.setPower(0.6);
-                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                break;
-            case 'd':
-                telemetry.addData("button", "d");
-                armLift.setTargetPosition(armEncoder + 30);
-                armLift.setPower(0.1);
-                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                break;
-            case 'u':
-                telemetry.addData("button", "u");
-                armLift.setTargetPosition(armEncoder - 30);
-                armLift.setPower(0.3);
-                armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                break;
-        }
 
         // SHARED SHIPPING HUB TIPPED - 20 pt!!!!!
 
@@ -246,6 +220,64 @@ public class WorkingTeleOp extends OpMode
         // level 1 = -230
         // level 2 = -480
         // level 3 = -780
+
+        // set heights 
+        if (joystick_arm_ground()){
+            telemetry.addData("button", "a"); // TODO change these to say ground/low/mid etc instead of button names
+            armTargetRaw = -30;
+            armState = STATE_HOLD;
+        }
+        if (joystick_arm_low()){
+            telemetry.addData("button", "b");
+            armTargetRaw = -300;
+            armState = STATE_HOLD;
+        }
+        if (joystick_arm_mid()){
+            telemetry.addData("button", "y");
+            armTargetRaw = -600;
+            armState = STATE_HOLD;
+        }
+        if (joystick_arm_high()){
+            telemetry.addData("button", "x");
+            armTargetRaw = -915;
+            armState = STATE_HOLD;
+        }
+
+
+        // arm state machine
+        if (armState == STATE_HOLD){
+            // if duck mode buttons are pressed, then init duck mode
+            if (joystick_duck()){
+                armState = STATE_DUCK_INIT;
+            }
+        }
+
+        if (armState == STATE_DUCK_INIT){
+            armTargetRaw = -680;
+            armState = STATE_DUCK_HOLD;
+        }
+
+        if (armState == STATE_DUCK_HOLD){
+            // if duck mode buttons are released, then return to hold state. might need some debouncing..
+            if (!joystick_duck()){
+                armState = STATE_HOLD;
+            }
+        }
+
+        // nudge
+        if (joystick_nudge_down()){
+            armTargetRaw -= 30;
+        }
+        if (joystic_nudge_up()){
+            armTargetRaw += 30;
+        }
+
+        // trapezoidal profile
+        armTargetSmooth = trap.smooth(armTargetRaw, (double) dt.time());
+        dt.reset();
+
+        // now command the motor!
+        armLift.setTargetPosition(armTargetSmooth);
     }
 
     /*
@@ -256,21 +288,28 @@ public class WorkingTeleOp extends OpMode
 
     }
 
-    private char getGamepadButtons(Gamepad gamepad) {
-        if (gamepad.a) {
-            return 'a';
-        } else if (gamepad.b) {
-            return 'b';
-        } else if (gamepad.x) {
-            return 'x';
-        } else if (gamepad.y) {
-            return 'y';
-        } else if (gamepad.dpad_down) {
-            return 'd';
-        } else if (gamepad.dpad_up) {
-            return 'u';
-        } else
-            return '\u0000';
+    // connect purpose to joystick buttons here
+    private boolean joystick_arm_ground(){
+        return gamepad1.a;
+    }
+    private boolean joystick_arm_low(){
+        return gamepad1.b;
+    }
+    private boolean joystick_arm_mid(){
+        return gamepad1.x;
+    }
+    private boolean joystick_arm_high(){
+        return gamepad1.y;
+    }
+    private boolean joysick_nudge_up(){
+        return gamepad1.dpad_up;
+    }
+    private boolean joystick_nudge_down(){
+        return gamepad1.dpad_down;
+    }
+
+    private boolean joystick_duck(){
+        return (gamepad1.right_trigger > 0.00 && gamepad1.left_trigger > 0.00);
     }
 
 }
