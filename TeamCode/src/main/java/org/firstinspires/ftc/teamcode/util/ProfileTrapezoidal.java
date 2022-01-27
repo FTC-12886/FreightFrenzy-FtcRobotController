@@ -62,7 +62,7 @@ public class ProfileTrapezoidal {
             double stop_position_error = stop_position - goal;
 
             // accelerate = -1 on final approach, +1 if falling short of the goal
-            current_acceleration = -1 + 2*(stop_position_error*(direction_to_goal < 0 ? 1 : 0));
+            current_acceleration = -1 + 2*((stop_position_error*direction_to_goal < 0) ? 1 : 0);
 
             // adjust velocity, limited
             current_velocity = profile_trap_limit(current_velocity + profile_acceleration*direction_to_goal*current_acceleration*dt,

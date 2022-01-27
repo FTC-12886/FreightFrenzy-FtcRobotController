@@ -106,11 +106,11 @@ public class EnhancedTeleOp extends OpMode {
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // - This uses basic math to combine motions and is easier to drive straight.
-        double drive = -Math.pow(gamepad1.left_stick_y, 2);
-        double turn  =  Math.pow(gamepad1.right_stick_x, 2);
+        double drive = -gamepad1.left_stick_y*Math.abs(gamepad1.left_stick_y);
+        double turn  =  gamepad1.right_stick_x*Math.abs(gamepad1.right_stick_x);
         // max speed is 165 rpm according to TetrixMotor.java. velocity is in rpm
-        double leftVelocity = Range.scale(drive + turn, -2, 2, -165, 165);
-        double rightVelocity = Range.scale(drive - turn, -2, 2, -165, 165);
+        double leftVelocity = Range.scale(Range.clip(drive + turn, -1, 1), -1, 1, -165, 165);
+        double rightVelocity = Range.scale(Range.clip(drive - turn, -1, 1), -1, 1, -165, 165);
         // convert rotations into degrees
         leftVelocity *= 360;
         rightVelocity *= 360;
