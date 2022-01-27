@@ -33,6 +33,7 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -59,10 +60,10 @@ public class WorkingTeleOp extends OpMode
 {
     // Declare OpMode members.
     private final ElapsedTime runtime = new ElapsedTime();
-    private DcMotor rearRightDrive = null;
-    private DcMotor rearLeftDrive = null;
-    private DcMotor frontRightDrive = null;
-    private DcMotor frontLeftDrive = null;
+    private DcMotorEx rearRightDrive = null;
+    private DcMotorEx rearLeftDrive = null;
+    private DcMotorEx frontRightDrive = null;
+    private DcMotorEx frontLeftDrive = null;
     private DcMotor armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
@@ -72,7 +73,7 @@ public class WorkingTeleOp extends OpMode
      */
     @Override
     public void init() {
-        telemetry.addData("Status", "Initialized");
+        telemetry.addData("Status", "Initializing");
 
         List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
 
@@ -82,10 +83,10 @@ public class WorkingTeleOp extends OpMode
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        rearRightDrive  = hardwareMap.get(DcMotor.class, "rear_right_drive");
-        rearLeftDrive = hardwareMap.get(DcMotor.class, "rear_left_drive");
-        frontRightDrive  = hardwareMap.get(DcMotor.class, "front_right_drive");
-        frontLeftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
+        rearRightDrive  = hardwareMap.get(DcMotorEx.class, "rear_right_drive");
+        rearLeftDrive = hardwareMap.get(DcMotorEx.class, "rear_left_drive");
+        frontRightDrive  = hardwareMap.get(DcMotorEx.class, "front_right_drive");
+        frontLeftDrive = hardwareMap.get(DcMotorEx.class, "front_left_drive");
 
         armLift = hardwareMap.get(DcMotor.class, "arm_lift");
         clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
@@ -97,6 +98,7 @@ public class WorkingTeleOp extends OpMode
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setDirection(DcMotor.Direction.FORWARD);
+        armLift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         clawRight.setDirection(DcMotor.Direction.REVERSE);
         clawLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         clawRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -112,9 +114,6 @@ public class WorkingTeleOp extends OpMode
         rearLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
-
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -176,9 +175,10 @@ public class WorkingTeleOp extends OpMode
         if (gamepad1.right_trigger > 0.00 && gamepad1.left_trigger > 0.00) {
             clawLeft.setPower(gamepad1.left_trigger);
             clawRight.setPower(-gamepad1.right_trigger);
-            int difference = Math.abs(armEncoder - (-650));
+            int duckHeight = -680;
+            int difference = Math.abs(armEncoder - (duckHeight));
             if (difference < 10 || difference > 100) {
-                armLift.setTargetPosition(-680);
+                armLift.setTargetPosition(duckHeight);
                 armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
             }

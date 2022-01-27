@@ -153,7 +153,8 @@ public class Manipulator {
         GROUND (-30),
         BOTTOM (-300),
         MIDDLE (-550),
-        DUCK (-750),
+        MIDDLE_TELEOP(-600),
+        DUCK (-680),
         TOP (-915);
 
         public final int encoderTicks;
