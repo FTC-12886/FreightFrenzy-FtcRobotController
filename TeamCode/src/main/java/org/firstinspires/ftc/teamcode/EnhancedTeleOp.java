@@ -2,10 +2,12 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -14,6 +16,7 @@ import org.firstinspires.ftc.teamcode.util.ProfileTrapezoidal;
 
 import java.util.List;
 
+@TeleOp(name="Enhanced TeleOp")
 public class EnhancedTeleOp extends OpMode {
 
     private final ElapsedTime runtime = new ElapsedTime();
@@ -66,6 +69,9 @@ public class EnhancedTeleOp extends OpMode {
         //armLift.setVelocityPIDFCoefficients(1.0, 0.1, 0.1, 0.1) // p, i, d, f
         //armLift.setPositionPIDFCoefficients(1.0) // p
 
+        // max speed - 1800, max acceleration 3600
+        // testing - 200, 1000
+        // some shuddering on descent, not very smooth; going up is fine
         trap = new ProfileTrapezoidal(2000, 4000); // cruise speed, acceleration TODO adjust these
         dt.reset();
 
@@ -89,7 +95,18 @@ public class EnhancedTeleOp extends OpMode {
         frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
 
         // Tell the driver that initialization is complete.
+        PIDFCoefficients coefficients = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+        telemetry.addData("gains", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", coefficients.p, coefficients.i, coefficients.d, coefficients.f) ;
+        armLift.setVelocityPIDFCoefficients(20, 3, 2,0); // stability limit is p = 40; reduce p or apply damping
+        telemetry.addData("newgains", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", coefficients.p, coefficients.i, coefficients.d, coefficients.f) ;
+        armLift.setPositionPIDFCoefficients(10);
+
         telemetry.addData("Status", "Initialized");
+    }
+
+    @Override
+    public void start() {
+        runtime.reset();
     }
 
     @Override
@@ -116,13 +133,14 @@ public class EnhancedTeleOp extends OpMode {
         rightVelocity *= 360;
 
         // Scale by "fast mode" and send power
-        rearLeftDrive.setVelocity(leftVelocity*fastMode, AngleUnit.DEGREES);
-        frontLeftDrive.setVelocity(leftVelocity*fastMode, AngleUnit.DEGREES);
-        rearRightDrive.setVelocity(rightVelocity*fastMode, AngleUnit.DEGREES);
-        frontRightDrive.setVelocity(rightVelocity*fastMode, AngleUnit.DEGREES);
+//        rearLeftDrive.setVelocity(leftVelocity*fastMode, AngleUnit.DEGREES);
+//        frontLeftDrive.setVelocity(leftVelocity*fastMode, AngleUnit.DEGREES);
+//        rearRightDrive.setVelocity(rightVelocity*fastMode, AngleUnit.DEGREES);
+//        frontRightDrive.setVelocity(rightVelocity*fastMode, AngleUnit.DEGREES);
 
 
         // Show the elapsed game time and wheel power.
+        telemetry.addData("Gamepad", "leftY (%.2f), rightX (%.2f)", gamepad1.left_stick_y, gamepad1.right_stick_x);
         telemetry.addData("Status", "Run Time: " + runtime);
         telemetry.addData("Desired", "left (%.2f), right (%.2f)", leftVelocity, rightVelocity);
         telemetry.addData("Real", "RL (%.2f), RR (%.2f), FL (%.2f), FR (%.2f)", rearLeftDrive.getVelocity(), rearRightDrive.getVelocity(), frontLeftDrive.getVelocity(), frontRightDrive.getVelocity());
@@ -152,45 +170,48 @@ public class EnhancedTeleOp extends OpMode {
         switch (button) {
             case 'a':
                 armPosition = Manipulator.ArmPosition.GROUND;
-                armTargetRaw = -30;
+                armTargetRaw = armPosition.encoderTicks;
                 break;
             case 'b':
                 armPosition = Manipulator.ArmPosition.BOTTOM;
-                armTargetRaw = -300;
+                armTargetRaw = armPosition.encoderTicks;
                 break;
             case 'y':
                 armPosition = Manipulator.ArmPosition.MIDDLE_TELEOP;
-                armTargetRaw = -600;
+                armTargetRaw = armPosition.encoderTicks;
                 break;
             case 'x':
                 armPosition = Manipulator.ArmPosition.TOP;
-                armTargetRaw = -915;
+                armTargetRaw = armPosition.encoderTicks;
                 break;
             case 'd':
-                armTargetRaw += 30;
+                armTargetRaw += 10;
                 break;
             case 'u':
-                armTargetRaw -= 30;
+                armTargetRaw -= 10;
                 break;
         }
 
 
         if (armPosition == Manipulator.ArmPosition.DUCK && lastArmPosition != Manipulator.ArmPosition.DUCK) { // transition to duck mode
-            armTargetRaw = -680;
+            armTargetRaw = armPosition.encoderTicks;
         }
-        telemetry.addData("armTargetRaw", armTargetRaw);
+
+        telemetry.addData("armTargetRaw", (int) armTargetRaw);
         telemetry.addData("arm state", armPosition);
 
 
         // profile and move motor
-        double armTargetSmooth = trap.smooth(armTargetRaw, dt.time());
+        double armTargetSmooth = trap.smooth(armTargetRaw, dt.time()/1000.0);
+        telemetry.addData("dt", (int) dt.time());
         dt.reset();
 
         // don't send commands to motor if we are resetting encoder
-        if (!armLimitState && lastArmLimitState != armLimit.getState()) {
+        if (armLimitState && !lastArmLimitState) { // when switch not on and last state is on
             armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         } else {
             armLift.setTargetPosition((int) armTargetSmooth);
+            armLift.setPower(1);
             armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         }
 

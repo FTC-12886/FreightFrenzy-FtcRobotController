@@ -150,12 +150,12 @@ public class Manipulator {
 
     public enum ArmPosition {
         UNKNOWN (0),
-        GROUND (-30),
-        BOTTOM (-300),
-        MIDDLE (-550),
-        MIDDLE_TELEOP(-600),
-        DUCK (-680),
-        TOP (-915);
+        GROUND (10),
+        BOTTOM (-270),
+        MIDDLE (-520),
+        MIDDLE_TELEOP(-570),
+        DUCK (-650),
+        TOP (-885);
 
         public final int encoderTicks;
 
