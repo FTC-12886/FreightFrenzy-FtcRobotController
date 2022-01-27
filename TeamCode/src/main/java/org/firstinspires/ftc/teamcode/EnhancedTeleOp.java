@@ -4,6 +4,7 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -24,6 +25,11 @@ public class EnhancedTeleOp extends OpMode {
     private DcMotorEx armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
+
+    private DigitalChannel armLimit;
+    private boolean lastArmLimitState;
+    private boolean armLimitState;
+
     private double armTargetRaw;
     private Manipulator.ArmPosition lastArmPosition = Manipulator.ArmPosition.UNKNOWN;
     private Manipulator.ArmPosition armPosition = Manipulator.ArmPosition.UNKNOWN;
@@ -51,7 +57,9 @@ public class EnhancedTeleOp extends OpMode {
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setDirection(DcMotor.Direction.FORWARD);
         armLift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
+        armLimit.setMode(DigitalChannel.Mode.INPUT);
 
         // TODO tuning! leaving these commented to start since Caleb reports the setpoint *is* being reached; the defaults are ok?
         // need to set both velocity and position coefficients since the position controller just sets velocity goals
@@ -87,6 +95,7 @@ public class EnhancedTeleOp extends OpMode {
     @Override
     public void loop() {
         int armEncoder = armLift.getCurrentPosition();
+        armLimitState = armLimit.getState();
 
         double fastMode = gamepad1.left_stick_button ? 0.85 : 0.60;
         if (fastMode > 0.60) { // move arm up if fast mode is on
@@ -172,14 +181,22 @@ public class EnhancedTeleOp extends OpMode {
         telemetry.addData("armTargetRaw", armTargetRaw);
         telemetry.addData("arm state", armPosition);
 
-        lastArmPosition = armPosition;
 
         // profile and move motor
         double armTargetSmooth = trap.smooth(armTargetRaw, dt.time());
         dt.reset();
 
-        armLift.setTargetPosition((int) armTargetSmooth);
+        // don't send commands to motor if we are resetting encoder
+        if (!armLimitState && lastArmLimitState != armLimit.getState()) {
+            armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        } else {
+            armLift.setTargetPosition((int) armTargetSmooth);
+            armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+
         telemetry.addData("armTargetSmooth", armTargetSmooth);
+        lastArmPosition = armPosition;
+        lastArmLimitState = armLimitState;
     }
     private char getGamepadButtons(Gamepad gamepad) {
         if (gamepad.a) {
