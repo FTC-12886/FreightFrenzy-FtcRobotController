@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -11,13 +14,16 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.util.ProfileTrapezoidal;
 
 import java.util.List;
 
-@TeleOp(name="Enhanced TeleOp")
-public class EnhancedTeleOp extends OpMode {
-
+@Config
+@TeleOp(name="Dashboard Enhanced TeleOp")
+public class DashboardEnhancedTeleOp extends OpMode {
+    private FtcDashboard dashboard;
+    private MultipleTelemetry telemetry;
     private final ElapsedTime runtime = new ElapsedTime();
     private DcMotorEx rearRightDrive = null;
     private DcMotorEx rearLeftDrive = null;
@@ -39,13 +45,26 @@ public class EnhancedTeleOp extends OpMode {
     private Manipulator.ArmPosition armPosition = Manipulator.ArmPosition.UNKNOWN;
     private ProfileTrapezoidal trap;
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+
+    public static double VELOCITY_P = 20;
+    public static double VELOCITY_I = 3;
+    public static double VELOCITY_D = 2;
+    public static double VELOCITY_F = 0;
+
+    public static double POSITION_P = 10;
+
+    public static double PROFILE_SPEED = 2000;
+    public static double PROFILE_ACCEL = 4000;
     @Override
     public void init() {
+        dashboard = FtcDashboard.getInstance();
+        telemetry = new MultipleTelemetry(super.telemetry, dashboard.getTelemetry());
+
         telemetry.addData("Status", "Initializing");
         telemetry.update();
 
-        List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
 
+        List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
         for (LynxModule hub : allHubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
@@ -74,7 +93,7 @@ public class EnhancedTeleOp extends OpMode {
         // max speed - 1800, max acceleration 3600
         // testing - 200, 1000
         // some shuddering on descent, not very smooth; going up is fine
-        trap = new ProfileTrapezoidal(2000, 4000); // cruise speed, acceleration TODO adjust these
+        trap = new ProfileTrapezoidal(PROFILE_SPEED, PROFILE_ACCEL); // cruise speed, acceleration TODO adjust these
         dt.reset();
 
         clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
@@ -97,26 +116,44 @@ public class EnhancedTeleOp extends OpMode {
         frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
 
         // set PID gains
-        armLift.setVelocityPIDFCoefficients(20, 3, 2,0); // stability limit is p = 40; reduce p or apply damping
+        armLift.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D,VELOCITY_F); // stability limit is p = 40; reduce p or apply damping
         PIDFCoefficients velocityGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
         telemetry.addData("velocity", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", velocityGains.p, velocityGains.i, velocityGains.d, velocityGains.f) ;
-        armLift.setPositionPIDFCoefficients(10);
+        armLift.setPositionPIDFCoefficients(POSITION_P);
         PIDFCoefficients positionGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
         telemetry.addData("position", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", positionGains.p, positionGains.i, positionGains.d, positionGains.f) ;
 
         // Tell the driver that initialization is complete.
 
         telemetry.addData("Status", "Initialized");
+        telemetry.log().setDisplayOrder(Telemetry.Log.DisplayOrder.OLDEST_FIRST);
+        telemetry.log().add("Edit config values at http://192.168.43.1:8080/dash");
+        telemetry.log().add("Don't forget to press apply");
+        telemetry.log().add("Press right bumper to apply trap profile config changes");
+        telemetry.log().add("You can also graph telemetry data");
         telemetry.update();
     }
 
     @Override
     public void start() {
+        telemetry.log().clear();
         runtime.reset();
     }
 
     @Override
     public void loop() {
+        // set PID gains
+        armLift.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D,VELOCITY_F); // stability limit is p = 40; reduce p or apply damping
+        PIDFCoefficients velocityGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+        telemetry.addData("velocity", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", velocityGains.p, velocityGains.i, velocityGains.d, velocityGains.f) ;
+        armLift.setPositionPIDFCoefficients(POSITION_P);
+        PIDFCoefficients positionGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
+        telemetry.addData("position", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", positionGains.p, positionGains.i, positionGains.d, positionGains.f) ;
+
+        if (gamepad1.right_bumper) { // press right bumper to apply new trap profile
+            trap = new ProfileTrapezoidal(PROFILE_SPEED, PROFILE_ACCEL);
+        }
+
         int armEncoder = armLift.getCurrentPosition();
         armLimitState = armLimit.getState();
 
