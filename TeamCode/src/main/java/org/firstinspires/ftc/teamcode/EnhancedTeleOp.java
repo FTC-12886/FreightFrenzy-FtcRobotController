@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.util.ProfileTrapezoidal;
+import org.firstinspires.ftc.teamcode.util.SmoothDelay;
 
 import java.util.List;
 
@@ -39,6 +40,8 @@ public class EnhancedTeleOp extends OpMode {
     private Manipulator.ArmPosition armPosition = Manipulator.ArmPosition.UNKNOWN;
     private ProfileTrapezoidal trap;
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+
+    private SmoothDelay joystickDelay = new SmoothDelay(10);
     @Override
     public void init() {
         telemetry.addData("Status", "Initializing");
@@ -126,9 +129,12 @@ public class EnhancedTeleOp extends OpMode {
         }
 
         // POV Mode uses left stick to go forward, and right stick to turn.
-        // - This uses basic math to combine motions and is easier to drive straight.
-        double drive = -gamepad1.left_stick_y*Math.abs(gamepad1.left_stick_y);
-        double turn  =  gamepad1.right_stick_x*Math.abs(gamepad1.right_stick_x);
+        // apply smooth delay
+        double leftStickY = joystickDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
+        double rightStickX = joystickDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
+        // calculate drive and turn
+        double drive = -leftStickY*Math.abs(leftStickY);
+        double turn  =  rightStickX*Math.abs(rightStickX);
         // max speed is 165 rpm according to TetrixMotor.java. velocity is in rpm
         double leftVelocity = Range.scale(Range.clip(drive + turn, -1, 1), -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);
         double rightVelocity = Range.scale(Range.clip(drive - turn, -1, 1), -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);

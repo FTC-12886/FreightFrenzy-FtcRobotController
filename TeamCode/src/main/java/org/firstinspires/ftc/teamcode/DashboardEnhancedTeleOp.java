@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.util.ProfileTrapezoidal;
+import org.firstinspires.ftc.teamcode.util.SmoothDelay;
 
 import java.util.List;
 
@@ -46,6 +47,8 @@ public class DashboardEnhancedTeleOp extends OpMode {
     private ProfileTrapezoidal trap;
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
+    private SmoothDelay joystickDelay = new SmoothDelay(10);
+
     public static double VELOCITY_P = 20;
     public static double VELOCITY_I = 3;
     public static double VELOCITY_D = 2;
@@ -55,6 +58,8 @@ public class DashboardEnhancedTeleOp extends OpMode {
 
     public static double PROFILE_SPEED = 2000;
     public static double PROFILE_ACCEL = 4000;
+
+    public static int JOYSTICK_DELAY_STEPS = 10;
     @Override
     public void init() {
         dashboard = FtcDashboard.getInstance();
@@ -129,7 +134,7 @@ public class DashboardEnhancedTeleOp extends OpMode {
         telemetry.log().setDisplayOrder(Telemetry.Log.DisplayOrder.OLDEST_FIRST);
         telemetry.log().add("Edit config values at http://192.168.43.1:8080/dash");
         telemetry.log().add("Don't forget to press apply");
-        telemetry.log().add("Press right bumper to apply trap profile config changes");
+        telemetry.log().add("Press right bumper to apply trap profile and smooth delay changes");
         telemetry.log().add("You can also graph telemetry data");
         telemetry.update();
     }
@@ -152,6 +157,7 @@ public class DashboardEnhancedTeleOp extends OpMode {
 
         if (gamepad1.right_bumper) { // press right bumper to apply new trap profile
             trap = new ProfileTrapezoidal(PROFILE_SPEED, PROFILE_ACCEL);
+            joystickDelay = new SmoothDelay(JOYSTICK_DELAY_STEPS);
         }
 
         int armEncoder = armLift.getCurrentPosition();
@@ -163,9 +169,12 @@ public class DashboardEnhancedTeleOp extends OpMode {
         }
 
         // POV Mode uses left stick to go forward, and right stick to turn.
-        // - This uses basic math to combine motions and is easier to drive straight.
-        double drive = -gamepad1.left_stick_y*Math.abs(gamepad1.left_stick_y);
-        double turn  =  gamepad1.right_stick_x*Math.abs(gamepad1.right_stick_x);
+        // apply smooth delay
+        double leftStickY = joystickDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
+        double rightStickX = joystickDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
+        // calculate drive and turn
+        double drive = -leftStickY*Math.abs(leftStickY);
+        double turn  =  rightStickX*Math.abs(rightStickX);
         // max speed is 165 rpm according to TetrixMotor.java. velocity is in rpm
         double leftVelocity = Range.scale(Range.clip(drive + turn, -1, 1), -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);
         double rightVelocity = Range.scale(Range.clip(drive - turn, -1, 1), -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);
