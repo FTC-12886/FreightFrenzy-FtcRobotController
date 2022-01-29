@@ -75,4 +75,15 @@ public class ProfileTrapezoidal {
         return current_position;
     }
 
+    public double getCurrent_velocity() {
+        return current_velocity;
+    }
+
+    public double getCurrent_position() {
+        return current_position;
+    }
+
+    public double getCurrent_acceleration() {
+        return current_acceleration;
+    }
 }

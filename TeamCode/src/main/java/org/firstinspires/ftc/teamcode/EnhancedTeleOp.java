@@ -11,6 +11,8 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.util.ProfileTrapezoidal;
 import org.firstinspires.ftc.teamcode.util.SmoothDelay;
 
@@ -43,6 +45,18 @@ public class EnhancedTeleOp extends OpMode {
 
     private final SmoothDelay rightStickSmoothDelay = new SmoothDelay(10);
     private final SmoothDelay leftStickSmoothDelay = new SmoothDelay(10);
+
+    // CPR taken from manufacturer website
+    private final double ARM_CPR = 2880;
+    private final double ARM_ENCODER_OFFSET = ((Math.PI/2)-15)/(2*Math.PI)*ARM_CPR; // todo plug in "lost" angle (in place of 15)
+    private final double ARM_LENGTH = 40 * 0.01; // todo calculate arm length to claw
+    private final double WHEEL_DIAMETER = DistanceUnit.INCH.toMeters(4); // taken from manufacturer website
+    private final double WHEEL_CPR = 480;
+    /* TODO calculate arm angle with encoder, input things
+     * 1440 cpr with 60:1 gearbox
+     * 2880 cpr with 2:1 external gear ratio (40 teeth: 80 teeth)
+     * Use trig to determining angle "lost" -- see picture in notes
+     */
     @Override
     public void init() {
         telemetry.addData("Status", "Initializing");
@@ -123,6 +137,8 @@ public class EnhancedTeleOp extends OpMode {
     public void loop() {
         int armEncoder = armLift.getCurrentPosition();
         armLimitState = armLimit.getState();
+        double theta = ticksToTheta(trap.getCurrent_position());
+        double thetaDot = ticksToThetaDot(trap.getCurrent_velocity());
 
         double fastMode = gamepad1.left_stick_button ? 0.85 : 0.60;
         if (fastMode > 0.60) { // move arm up if fast mode is on
@@ -136,6 +152,13 @@ public class EnhancedTeleOp extends OpMode {
         // calculate drive and turn
         double drive = -leftStickY*Math.abs(leftStickY);
         double turn  =  rightStickX*Math.abs(rightStickX);
+
+        // todo is there a better way than scale up, convert, scale down?
+        double driveMetersPerSec = ticksToMeters(Range.scale(drive, -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS)*fastMode);
+        // keep arm in place horizontally (cancel out body relative motion), derivative of cosine amplified by theta dot
+        driveMetersPerSec -= (-ARM_LENGTH*Math.sin(theta)*thetaDot);
+        drive = Range.scale(metersToTicks(driveMetersPerSec), -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS, -1, 1)/fastMode;
+
         // max speed is 165 rpm according to TetrixMotor.java. velocity is in rpm
         double leftVelocity = Range.scale(Range.clip(drive + turn, -1, 1), -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);
         double rightVelocity = Range.scale(Range.clip(drive - turn, -1, 1), -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);
@@ -244,4 +267,47 @@ public class EnhancedTeleOp extends OpMode {
             return '\u0000';
     }
 
+    private double thetaToTicks(double theta) {
+        return thetaToTicks(theta, AngleUnit.RADIANS);
+    }
+    private double thetaToTicks(double theta, AngleUnit angleUnit) {
+        theta = angleUnit.toRadians(theta);
+        return ARM_ENCODER_OFFSET +theta/(Math.PI*2)*ARM_CPR;
+    }
+
+    private double ticksToTheta(double ticks) {
+        return ticksToTheta(ticks, AngleUnit.RADIANS);
+    }
+
+    private double ticksToTheta(double ticks, AngleUnit angleUnit) {
+        double theta = (ticks - ARM_ENCODER_OFFSET) * ((2 * Math.PI) / ARM_CPR);
+        return angleUnit.fromRadians(theta);
+    }
+
+    private double ticksToThetaDot(double ticks) {
+        return ticksToThetaDot(ticks, AngleUnit.RADIANS);
+    }
+
+    private double ticksToThetaDot(double ticks, AngleUnit angleUnit) {
+        double thetaDot = ((2 * Math.PI) / ARM_CPR) * ticks; // rad per tick * ticks per second
+        return angleUnit.fromRadians(thetaDot);
+    }
+
+    private double ticksToMeters(double ticks) {
+        return ticksToDistance(ticks, DistanceUnit.METER);
+    }
+
+    private double ticksToDistance(double ticks, DistanceUnit distanceUnit) {
+        double distance = (ticks/WHEEL_CPR)*(WHEEL_DIAMETER*Math.PI);
+        return distanceUnit.fromMeters(distance);
+    }
+
+    private double metersToTicks(double meters) {
+        return distanceToTicks(meters, DistanceUnit.METER);
+    }
+
+    private double distanceToTicks(double distance, DistanceUnit distanceUnit) {
+        distance = distanceUnit.toMeters(distance);
+        return distance/(WHEEL_DIAMETER*Math.PI)*WHEEL_CPR;
+    }
 }
