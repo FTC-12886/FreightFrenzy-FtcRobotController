@@ -41,7 +41,8 @@ public class EnhancedTeleOp extends OpMode {
     private ProfileTrapezoidal trap;
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
-    private SmoothDelay joystickDelay = new SmoothDelay(10);
+    private final SmoothDelay rightStickSmoothDelay = new SmoothDelay(10);
+    private final SmoothDelay leftStickSmoothDelay = new SmoothDelay(10);
     @Override
     public void init() {
         telemetry.addData("Status", "Initializing");
@@ -130,8 +131,8 @@ public class EnhancedTeleOp extends OpMode {
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // apply smooth delay
-        double leftStickY = joystickDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
-        double rightStickX = joystickDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
+        double leftStickY = leftStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
+        double rightStickX = rightStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
         // calculate drive and turn
         double drive = -leftStickY*Math.abs(leftStickY);
         double turn  =  rightStickX*Math.abs(rightStickX);

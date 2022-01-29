@@ -47,7 +47,8 @@ public class DashboardEnhancedTeleOp extends OpMode {
     private ProfileTrapezoidal trap;
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
-    private SmoothDelay joystickDelay = new SmoothDelay(10);
+    private SmoothDelay rightStickSmoothDelay = new SmoothDelay(10);
+    private SmoothDelay leftStickSmoothDelay = new SmoothDelay(10);
 
     public static double VELOCITY_P = 20;
     public static double VELOCITY_I = 3;
@@ -59,7 +60,9 @@ public class DashboardEnhancedTeleOp extends OpMode {
     public static double PROFILE_SPEED = 2000;
     public static double PROFILE_ACCEL = 4000;
 
-    public static int JOYSTICK_DELAY_STEPS = 10;
+    public static int LEFT_STICK_DELAY_STEPS = 10;
+    public static int RIGHT_STICK_DELAY_STEPS = 10;
+
     @Override
     public void init() {
         dashboard = FtcDashboard.getInstance();
@@ -120,14 +123,6 @@ public class DashboardEnhancedTeleOp extends OpMode {
         frontRightDrive.setDirection(DcMotor.Direction.REVERSE);
         frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
 
-        // set PID gains
-        armLift.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D,VELOCITY_F); // stability limit is p = 40; reduce p or apply damping
-        PIDFCoefficients velocityGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
-        telemetry.addData("velocity", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", velocityGains.p, velocityGains.i, velocityGains.d, velocityGains.f) ;
-        armLift.setPositionPIDFCoefficients(POSITION_P);
-        PIDFCoefficients positionGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
-        telemetry.addData("position", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", positionGains.p, positionGains.i, positionGains.d, positionGains.f) ;
-
         // Tell the driver that initialization is complete.
 
         telemetry.addData("Status", "Initialized");
@@ -157,7 +152,8 @@ public class DashboardEnhancedTeleOp extends OpMode {
 
         if (gamepad1.right_bumper) { // press right bumper to apply new trap profile
             trap = new ProfileTrapezoidal(PROFILE_SPEED, PROFILE_ACCEL);
-            joystickDelay = new SmoothDelay(JOYSTICK_DELAY_STEPS);
+            leftStickSmoothDelay = new SmoothDelay(LEFT_STICK_DELAY_STEPS);
+            rightStickSmoothDelay = new SmoothDelay(RIGHT_STICK_DELAY_STEPS);
         }
 
         int armEncoder = armLift.getCurrentPosition();
@@ -170,8 +166,8 @@ public class DashboardEnhancedTeleOp extends OpMode {
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // apply smooth delay
-        double leftStickY = joystickDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
-        double rightStickX = joystickDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
+        double leftStickY = leftStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
+        double rightStickX = rightStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
         // calculate drive and turn
         double drive = -leftStickY*Math.abs(leftStickY);
         double turn  =  rightStickX*Math.abs(rightStickX);
