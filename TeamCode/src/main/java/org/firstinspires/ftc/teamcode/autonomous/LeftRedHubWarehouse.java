@@ -39,7 +39,10 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -54,6 +57,7 @@ import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.Manipulator;
 import org.firstinspires.ftc.teamcode.ObjDetect;
+import org.firstinspires.ftc.teamcode.util.ProfileTrapezoidal;
 
 import java.util.List;
 
@@ -71,23 +75,33 @@ import java.util.List;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="left red, hub, park warehouse", group="Red", preselectTeleOp = "wroking Teleop")
+@Autonomous(name="left red, hub, park warehouse", group="Red", preselectTeleOp = "Enhanced TeleOp")
 
 public class LeftRedHubWarehouse extends OpMode
 {
     // Declare OpMode members.
     private final ElapsedTime runtime = new ElapsedTime();
-    private DcMotor rearRightDrive = null;
-    private DcMotor rearLeftDrive = null;
-    private DcMotor frontRightDrive = null;
-    private DcMotor frontLeftDrive = null;
-    private DcMotor armLift;
+    private DcMotorEx rearRightDrive = null;
+    private DcMotorEx rearLeftDrive = null;
+    private DcMotorEx frontRightDrive = null;
+    private DcMotorEx frontLeftDrive = null;
+    private DcMotorEx armLift;
     private DcMotor clawLeft;
     private DcMotor clawRight;
     //    private DigitalChannel armLimit;
     private State autonomousState = State.EXIT_START;
     private DistanceSensor rearDistance;
     private BNO055IMU imu;
+
+    private DigitalChannel armLimit;
+    private boolean lastArmLimitState;
+    private boolean armLimitState;
+
+    private double armTargetRaw;
+    private Manipulator.ArmPosition lastArmPosition = Manipulator.ArmPosition.UNKNOWN;
+    private Manipulator.ArmPosition armPosition = Manipulator.ArmPosition.UNKNOWN;
+    private ProfileTrapezoidal trap;
+    private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
     private ObjDetect objDetect;
     private Manipulator.ArmPosition position;
@@ -106,18 +120,17 @@ public class LeftRedHubWarehouse extends OpMode
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        rearRightDrive  = hardwareMap.get(DcMotor.class, "rear_right_drive");
-        rearLeftDrive = hardwareMap.get(DcMotor.class, "rear_left_drive");
-        frontRightDrive  = hardwareMap.get(DcMotor.class, "front_right_drive");
-        frontLeftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
+        rearRightDrive  = hardwareMap.get(DcMotorEx.class, "rear_right_drive");
+        rearLeftDrive = hardwareMap.get(DcMotorEx.class, "rear_left_drive");
+        frontRightDrive  = hardwareMap.get(DcMotorEx.class, "front_right_drive");
+        frontLeftDrive = hardwareMap.get(DcMotorEx.class, "front_left_drive");
 
-        armLift = hardwareMap.get(DcMotor.class, "arm_lift");
-        clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
-        clawRight = hardwareMap.get(DcMotor.class, "claw_right");
+        armLift = hardwareMap.get(DcMotorEx.class, "arm_lift");
+        clawLeft = hardwareMap.get(DcMotorEx.class, "claw_left");
+        clawRight = hardwareMap.get(DcMotorEx.class, "claw_right");
 
-//        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
-//        armLimit.setMode(DigitalChannel.Mode.INPUT);
-
+        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
+        armLimit.setMode(DigitalChannel.Mode.INPUT);
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setDirection(DcMotor.Direction.FORWARD);
@@ -138,11 +151,16 @@ public class LeftRedHubWarehouse extends OpMode
         frontRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        // set PID gains
+        armLift.setVelocityPIDFCoefficients(20, 3, 2,0); // stability limit is p = 40; reduce p or apply damping
+        PIDFCoefficients velocityGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+        telemetry.addData("velocity", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", velocityGains.p, velocityGains.i, velocityGains.d, velocityGains.f) ;
+        armLift.setPositionPIDFCoefficients(10);
+        PIDFCoefficients positionGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
+        telemetry.addData("position", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", positionGains.p, positionGains.i, positionGains.d, positionGains.f) ;
 
         initGyro();
         initObjDetect();
-        // initVuforia();
-        // initTfod();
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
     }
@@ -176,12 +194,10 @@ public class LeftRedHubWarehouse extends OpMode
     @Override
     public void start() {
         if (position == Manipulator.ArmPosition.UNKNOWN) {
-            armLift.setTargetPosition(Manipulator.ArmPosition.TOP.encoderTicks);
+            armTargetRaw = Manipulator.ArmPosition.TOP.encoderTicks;
         } else {
-            armLift.setTargetPosition(position.encoderTicks);
+            armTargetRaw = position.getEncoderTicks();
         }
-        armLift.setPower(0.3);
-        armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         runtime.reset();
 
     }
@@ -191,6 +207,8 @@ public class LeftRedHubWarehouse extends OpMode
      */
     @Override
     public void loop() {
+        int armEncoder = armLift.getCurrentPosition();
+        armLimitState = armLimit.getState();
         double leftPower = 0;
         double rightPower = 0;
         double clawLeftPower = 0;
@@ -200,13 +218,13 @@ public class LeftRedHubWarehouse extends OpMode
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         double angle = angles.firstAngle;
         double rearCm = rearDistance.getDistance(DistanceUnit.CM);
-        double encoder = frontLeftDrive.getCurrentPosition();
+        double wheelEncoder = frontLeftDrive.getCurrentPosition();
 
 
         telemetry.addData("DISTANCE", rearCm);
         telemetry.addData("STATE", autonomousState);
         telemetry.addData("ANGLE", angle);
-        telemetry.addData("ENCODER", encoder);
+        telemetry.addData("ENCODER", wheelEncoder);
         switch (autonomousState) {
             case EXIT_START:
                 leftPower = 1;
@@ -238,7 +256,7 @@ public class LeftRedHubWarehouse extends OpMode
                     target = 350 - 64;
                 else
                     target = 350;
-                if (encoder >= target) {
+                if (wheelEncoder >= target) {
                     runtime.reset();
                     autonomousState = State.DROP_BLOCK;
                 }
@@ -257,7 +275,7 @@ public class LeftRedHubWarehouse extends OpMode
             case DRIVE_REVERSE:
                 leftPower = -1;
                 rightPower = -1;
-                if (encoder <= -350) {
+                if (wheelEncoder <= -350) {
                     leftPower = 0;
                     rightPower = 0;
                     runtime.reset();
@@ -270,9 +288,8 @@ public class LeftRedHubWarehouse extends OpMode
                 if (angle >= 85) {
                     leftPower = 0;
                     rightPower = 0;
-                    armLift.setTargetPosition(-300);
-                    armLift.setPower(0.6);
-                    armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armPosition = Manipulator.ArmPosition.BOTTOM;
+                    armTargetRaw = armPosition.encoderTicks;
                     runtime.reset();
                     autonomousState = State.DRIVE_WAREHOUSE;
                 }
@@ -305,15 +322,33 @@ public class LeftRedHubWarehouse extends OpMode
         rearRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rearLeftDrive.setPower(leftPower*0.6);
-        rearRightDrive.setPower(rightPower*0.6);
-        frontLeftDrive.setPower(leftPower*0.6);
-        frontRightDrive.setPower(rightPower*0.6);
+        leftPower *= 0.6;
+        rightPower *= 0.6;
+        rearLeftDrive.setPower(leftPower);
+        rearRightDrive.setPower(rightPower);
+        frontLeftDrive.setPower(leftPower);
+        frontRightDrive.setPower(rightPower);
 
 
         clawLeft.setPower(clawLeftPower);
         clawRight.setPower(clawRightPower);
+        double armTargetSmooth = trap.smooth(armTargetRaw, dt.time()/1000.0);
+        telemetry.addData("armTargetRaw", (int) armTargetRaw);
+        telemetry.addData("armTargetSmooth", armTargetSmooth);
+        telemetry.addData("arm state", armPosition);
+        telemetry.addData("dt", (int) dt.time());
+        dt.reset();
 
+        // don't send commands to motor if we are resetting encoder
+        if (armLimitState && !lastArmLimitState) { // when switch not on and last state is on
+            armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        } else {
+            armLift.setTargetPosition((int) armTargetSmooth);
+            armLift.setPower(1);
+            armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+
+        lastArmLimitState = armLimitState;
 
     }
 

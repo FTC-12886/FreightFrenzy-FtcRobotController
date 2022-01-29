@@ -60,8 +60,8 @@ public class DashboardEnhancedTeleOp extends OpMode {
     public static double PROFILE_SPEED = 2000;
     public static double PROFILE_ACCEL = 4000;
 
-    public static int LEFT_STICK_DELAY_STEPS = 10;
-    public static int RIGHT_STICK_DELAY_STEPS = 10;
+    public static int LEFT_STICK_DELAY_STEPS = 1;
+    public static int RIGHT_STICK_DELAY_STEPS = 1;
 
     @Override
     public void init() {

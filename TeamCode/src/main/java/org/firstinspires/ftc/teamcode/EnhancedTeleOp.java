@@ -41,8 +41,8 @@ public class EnhancedTeleOp extends OpMode {
     private ProfileTrapezoidal trap;
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
-    private final SmoothDelay rightStickSmoothDelay = new SmoothDelay(10);
-    private final SmoothDelay leftStickSmoothDelay = new SmoothDelay(10);
+    private final SmoothDelay rightStickSmoothDelay = new SmoothDelay(1);
+    private final SmoothDelay leftStickSmoothDelay = new SmoothDelay(1);
     @Override
     public void init() {
         telemetry.addData("Status", "Initializing");
