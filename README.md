@@ -1,8 +1,6 @@
 ## NOTICE
 
 **This repository is for team 12886 The LaGrange Points**  
-Notes:
- - Use batch sensor read
 
 The following is the original README.md file:  
 
