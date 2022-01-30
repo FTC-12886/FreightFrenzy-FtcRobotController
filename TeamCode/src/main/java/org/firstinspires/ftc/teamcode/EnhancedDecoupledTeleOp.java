@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.util.SmoothDelay;
 
 import java.util.List;
 
-@TeleOp(name="Enhanced TeleOp")
+@TeleOp(name="Enhanced Decoupled TeleOp")
 public class EnhancedDecoupledTeleOp extends OpMode {
 
     private final ElapsedTime runtime = new ElapsedTime();
@@ -46,9 +46,10 @@ public class EnhancedDecoupledTeleOp extends OpMode {
     private final SmoothDelay rightStickSmoothDelay = new SmoothDelay(10);
     private final SmoothDelay leftStickSmoothDelay = new SmoothDelay(10);
 
+    // todo simplify any expressions (make sure they are still readable though)
     // CPR taken from manufacturer website
     private final double ARM_CPR = 2880;
-    private final double ARM_ENCODER_OFFSET = ((Math.PI/2)-15)/(2*Math.PI)*ARM_CPR; // todo plug in "lost" angle (in place of 15)
+    private final double ARM_ENCODER_OFFSET = ((Math.PI/2)-(Math.PI/12))/(2*Math.PI)*ARM_CPR; // todo plug in "lost" angle (in place of pi/12)
     private final double ARM_LENGTH = 40 * 0.01; // todo calculate arm length to claw
     private final double WHEEL_DIAMETER = DistanceUnit.INCH.toMeters(4); // taken from manufacturer website
     private final double WHEEL_CPR = 480;
@@ -155,7 +156,7 @@ public class EnhancedDecoupledTeleOp extends OpMode {
 
         // todo is there a better way than scale up, convert, scale down?
         double driveMetersPerSec = ticksToMeters(Range.scale(drive, -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS)*fastMode);
-        // keep arm in place horizontally (cancel out body relative motion), derivative of cosine amplified by theta dot
+        // keep arm in place horizontally (cancel out body relative motion), derivative of arm_length cos(theta), move at rate of thetadort
         driveMetersPerSec -= (-ARM_LENGTH*Math.sin(theta)*thetaDot);
         drive = Range.scale(metersToTicks(driveMetersPerSec), -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS, -1, 1)/fastMode;
 
