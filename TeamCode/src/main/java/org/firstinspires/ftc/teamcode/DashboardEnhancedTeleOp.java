@@ -47,9 +47,6 @@ public class DashboardEnhancedTeleOp extends OpMode {
     private ProfileTrapezoidal trap;
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
-    private SmoothDelay rightStickSmoothDelay = new SmoothDelay(10);
-    private SmoothDelay leftStickSmoothDelay = new SmoothDelay(10);
-
     public static double VELOCITY_P = 20;
     public static double VELOCITY_I = 3;
     public static double VELOCITY_D = 2;
@@ -63,6 +60,11 @@ public class DashboardEnhancedTeleOp extends OpMode {
     public static int LEFT_STICK_DELAY_STEPS = 1;
     public static int RIGHT_STICK_DELAY_STEPS = 1;
 
+    public static double DEFAULT_SPEED = 0.6;
+    public static double FAST_MODE_SPEED = 0.85;
+
+    private SmoothDelay leftStickSmoothDelay = new SmoothDelay(LEFT_STICK_DELAY_STEPS);
+    private SmoothDelay rightStickSmoothDelay = new SmoothDelay(RIGHT_STICK_DELAY_STEPS);
     @Override
     public void init() {
         dashboard = FtcDashboard.getInstance();
@@ -128,8 +130,8 @@ public class DashboardEnhancedTeleOp extends OpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.log().setDisplayOrder(Telemetry.Log.DisplayOrder.OLDEST_FIRST);
         telemetry.log().add("Edit config values at http://192.168.43.1:8080/dash");
-        telemetry.log().add("Don't forget to press apply");
-        telemetry.log().add("Press right bumper to apply trap profile and smooth delay changes");
+        telemetry.log().add("Don't forget to press apply on the dashboard");
+        telemetry.log().add("You also need to press right bumper to apply changes on the robot");
         telemetry.log().add("You can also graph telemetry data");
         telemetry.update();
     }
@@ -142,15 +144,15 @@ public class DashboardEnhancedTeleOp extends OpMode {
 
     @Override
     public void loop() {
-        // set PID gains
-        armLift.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D,VELOCITY_F); // stability limit is p = 40; reduce p or apply damping
-        PIDFCoefficients velocityGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
-        telemetry.addData("velocity", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", velocityGains.p, velocityGains.i, velocityGains.d, velocityGains.f) ;
-        armLift.setPositionPIDFCoefficients(POSITION_P);
-        PIDFCoefficients positionGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
-        telemetry.addData("position", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", positionGains.p, positionGains.i, positionGains.d, positionGains.f) ;
-
         if (gamepad1.right_bumper) { // press right bumper to apply new trap profile
+            // set PID gains
+            armLift.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D,VELOCITY_F); // stability limit is p = 40; reduce p or apply damping
+            PIDFCoefficients velocityGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+            telemetry.addData("velocity", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", velocityGains.p, velocityGains.i, velocityGains.d, velocityGains.f) ;
+            armLift.setPositionPIDFCoefficients(POSITION_P);
+            PIDFCoefficients positionGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
+            telemetry.addData("position", "p (%.2f), i (%.2f), d (%.2f), f (%.2f)", positionGains.p, positionGains.i, positionGains.d, positionGains.f) ;
+
             trap = new ProfileTrapezoidal(PROFILE_SPEED, PROFILE_ACCEL);
             leftStickSmoothDelay = new SmoothDelay(LEFT_STICK_DELAY_STEPS);
             rightStickSmoothDelay = new SmoothDelay(RIGHT_STICK_DELAY_STEPS);
@@ -159,8 +161,8 @@ public class DashboardEnhancedTeleOp extends OpMode {
         int armEncoder = armLift.getCurrentPosition();
         armLimitState = armLimit.getState();
 
-        double fastMode = gamepad1.left_stick_button ? 0.85 : 0.60;
-        if (fastMode > 0.60) { // move arm up if fast mode is on
+        double fastMode = gamepad1.left_stick_button ? FAST_MODE_SPEED : DEFAULT_SPEED;
+        if (fastMode > DEFAULT_SPEED) { // move arm up if fast mode is on
             armPosition = Manipulator.ArmPosition.BOTTOM;
         }
 
@@ -183,7 +185,6 @@ public class DashboardEnhancedTeleOp extends OpMode {
         frontLeftDrive.setVelocity(leftVelocity);
         rearRightDrive.setVelocity(rightVelocity);
         frontRightDrive.setVelocity(rightVelocity);
-
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime);

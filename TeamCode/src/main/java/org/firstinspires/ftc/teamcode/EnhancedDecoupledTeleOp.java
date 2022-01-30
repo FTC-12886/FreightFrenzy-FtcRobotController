@@ -27,7 +27,6 @@ public class EnhancedDecoupledTeleOp extends OpMode {
     private DcMotorEx frontRightDrive = null;
     private DcMotorEx frontLeftDrive = null;
     private final DcMotorEx[] driveMotors = new DcMotorEx[4];
-    private static final int MAX_VELOCITY_TPS = 2400;
 
     private DcMotorEx armLift;
     private DcMotor clawLeft;
@@ -43,16 +42,20 @@ public class EnhancedDecoupledTeleOp extends OpMode {
     private ProfileTrapezoidal trap;
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
-    private final SmoothDelay rightStickSmoothDelay = new SmoothDelay(10);
-    private final SmoothDelay leftStickSmoothDelay = new SmoothDelay(10);
+    private final SmoothDelay rightStickSmoothDelay = new SmoothDelay(1);
+    private final SmoothDelay leftStickSmoothDelay = new SmoothDelay(1);
+
 
     // todo simplify any expressions (make sure they are still readable though)
     // CPR taken from manufacturer website
-    private final double ARM_CPR = 2880;
-    private final double ARM_ENCODER_OFFSET = ((Math.PI/2)-(Math.PI/12))/(2*Math.PI)*ARM_CPR; // todo plug in "lost" angle (in place of pi/12)
-    private final double ARM_LENGTH = 40 * 0.01; // todo calculate arm length to claw
-    private final double WHEEL_DIAMETER = DistanceUnit.INCH.toMeters(4); // taken from manufacturer website
-    private final double WHEEL_CPR = 480;
+    private static final double ARM_CPR = 2880;
+    private static final double ARM_ENCODER_OFFSET = ((Math.PI/2)-(Math.PI/12))/(2*Math.PI)*ARM_CPR; // todo plug in "lost" angle (in place of pi/12) or just measure
+    private static final double ARM_LENGTH = 40 * 0.01; // todo calculate arm length to claw
+    private static final double WHEEL_DIAMETER = DistanceUnit.INCH.toMeters(4); // taken from manufacturer website
+    private static final double WHEEL_CPR = 480;
+    private static final int MAX_VELOCITY_TPS = 2400;
+    private static final double MAX_VELOCITY_MPS = ticksToMeters(MAX_VELOCITY_TPS);
+
     /* TODO calculate arm angle with encoder, input things
      * 1440 cpr with 60:1 gearbox
      * 2880 cpr with 2:1 external gear ratio (40 teeth: 80 teeth)
@@ -138,47 +141,7 @@ public class EnhancedDecoupledTeleOp extends OpMode {
     public void loop() {
         int armEncoder = armLift.getCurrentPosition();
         armLimitState = armLimit.getState();
-        double theta = ticksToTheta(trap.getCurrent_position());
-        double thetaDot = ticksToThetaDot(trap.getCurrent_velocity());
-
-        double fastMode = gamepad1.left_stick_button ? 0.85 : 0.60;
-        if (fastMode > 0.60) { // move arm up if fast mode is on
-            armPosition = Manipulator.ArmPosition.BOTTOM;
-        }
-
-        // POV Mode uses left stick to go forward, and right stick to turn.
-        // apply smooth delay
-        double leftStickY = leftStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
-        double rightStickX = rightStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
-        // calculate drive and turn
-        double drive = -leftStickY*Math.abs(leftStickY);
-        double turn  =  rightStickX*Math.abs(rightStickX);
-
-        // todo is there a better way than scale up, convert, scale down?
-        double driveMetersPerSec = ticksToMeters(Range.scale(drive, -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS)*fastMode);
-        // keep arm in place horizontally (cancel out body relative motion), derivative of arm_length cos(theta), move at rate of thetadort
-        driveMetersPerSec -= (-ARM_LENGTH*Math.sin(theta)*thetaDot);
-        drive = Range.scale(metersToTicks(driveMetersPerSec), -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS, -1, 1)/fastMode;
-
-        // max speed is 165 rpm according to TetrixMotor.java. velocity is in rpm
-        double leftVelocity = Range.scale(Range.clip(drive + turn, -1, 1), -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);
-        double rightVelocity = Range.scale(Range.clip(drive - turn, -1, 1), -1, 1, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);
-        // Calculate fast mode
-        leftVelocity *= fastMode;
-        rightVelocity *= fastMode;
-
-        // Send power to motors
-        rearLeftDrive.setVelocity(leftVelocity);
-        frontLeftDrive.setVelocity(leftVelocity);
-        rearRightDrive.setVelocity(rightVelocity);
-        frontRightDrive.setVelocity(rightVelocity);
-
-
-        // Show the elapsed game time and wheel power.
-        telemetry.addData("Status", "Run Time: " + runtime);
-        telemetry.addData("Desired", "left (%.2f), right (%.2f)", leftVelocity, rightVelocity);
-        telemetry.addData("Real", "RL (%.2f), RR (%.2f), FL (%.2f), FR (%.2f)", rearLeftDrive.getVelocity(), rearRightDrive.getVelocity(), frontLeftDrive.getVelocity(), frontRightDrive.getVelocity());
-        telemetry.addData("arm pos", armEncoder);
+                telemetry.addData("arm pos", armEncoder);
 
         // both triggers = duck mode
         if (gamepad1.right_trigger > 0.00 && gamepad1.left_trigger > 0.00) {
@@ -231,7 +194,7 @@ public class EnhancedDecoupledTeleOp extends OpMode {
             armTargetRaw = armPosition.encoderTicks;
         }
 
-        // profile and move motor
+        // profile and move arm motor
         double armTargetSmooth = trap.smooth(armTargetRaw, dt.time()/1000.0);
         telemetry.addData("armTargetRaw", (int) armTargetRaw);
         telemetry.addData("armTargetSmooth", armTargetSmooth);
@@ -247,6 +210,42 @@ public class EnhancedDecoupledTeleOp extends OpMode {
             armLift.setPower(1);
             armLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         }
+
+        double theta = ticksToTheta(trap.getCurrent_position());
+        double thetaDot = ticksToThetaDot(trap.getCurrent_velocity());
+
+        double fastMode = gamepad1.left_stick_button ? 0.85 : 0.60;
+        if (fastMode > 0.60) { // move arm up if fast mode is on
+            armPosition = Manipulator.ArmPosition.BOTTOM;
+        }
+
+        // POV Mode uses left stick to go forward, and right stick to turn.
+        // apply smooth delay
+        double leftStickY = leftStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
+        double rightStickX = rightStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
+
+        // calculate drive and turn in m/s, adjust for fast mode to get "real velocity"
+        double drive = -leftStickY*Math.abs(leftStickY)*MAX_VELOCITY_MPS*fastMode;
+        double turn  =  rightStickX*Math.abs(rightStickX)*MAX_VELOCITY_MPS*fastMode;
+
+        // keep arm in place horizontally (cancel out body relative motion); derivative of arm_length*cos(theta), move at rate of thetadot
+        drive -= (-ARM_LENGTH*Math.sin(theta)*thetaDot);
+
+        // converting to tic/s; any velocity modification should happen BEFORE this
+        drive = metersToTicks(drive);
+        turn = metersToTicks(turn);
+        double leftVelocity = Range.clip(drive + turn, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);
+        double rightVelocity = Range.clip(drive - turn, -MAX_VELOCITY_TPS, MAX_VELOCITY_TPS);
+        // Send power to motors
+        rearLeftDrive.setVelocity(leftVelocity);
+        frontLeftDrive.setVelocity(leftVelocity);
+        rearRightDrive.setVelocity(rightVelocity);
+        frontRightDrive.setVelocity(rightVelocity);
+
+        // Show the elapsed game time and wheel power.
+        telemetry.addData("Status", "Run Time: " + runtime);
+        telemetry.addData("Desired", "left (%.2f), right (%.2f)", leftVelocity, rightVelocity);
+        telemetry.addData("Real", "RL (%.2f), RR (%.2f), FL (%.2f), FR (%.2f)", rearLeftDrive.getVelocity(), rearRightDrive.getVelocity(), frontLeftDrive.getVelocity(), frontRightDrive.getVelocity());
 
         lastArmPosition = armPosition;
         lastArmLimitState = armLimitState;
@@ -268,46 +267,46 @@ public class EnhancedDecoupledTeleOp extends OpMode {
             return '\u0000';
     }
 
-    private double thetaToTicks(double theta) {
+    private static double thetaToTicks(double theta) {
         return thetaToTicks(theta, AngleUnit.RADIANS);
     }
-    private double thetaToTicks(double theta, AngleUnit angleUnit) {
+    private static double thetaToTicks(double theta, AngleUnit angleUnit) {
         theta = angleUnit.toRadians(theta);
         return ARM_ENCODER_OFFSET +theta/(Math.PI*2)*ARM_CPR;
     }
 
-    private double ticksToTheta(double ticks) {
+    private static double ticksToTheta(double ticks) {
         return ticksToTheta(ticks, AngleUnit.RADIANS);
     }
 
-    private double ticksToTheta(double ticks, AngleUnit angleUnit) {
+    private static double ticksToTheta(double ticks, AngleUnit angleUnit) {
         double theta = (ticks - ARM_ENCODER_OFFSET) * ((2 * Math.PI) / ARM_CPR);
         return angleUnit.fromRadians(theta);
     }
 
-    private double ticksToThetaDot(double ticks) {
+    private static double ticksToThetaDot(double ticks) {
         return ticksToThetaDot(ticks, AngleUnit.RADIANS);
     }
 
-    private double ticksToThetaDot(double ticks, AngleUnit angleUnit) {
+    private static double ticksToThetaDot(double ticks, AngleUnit angleUnit) {
         double thetaDot = ((2 * Math.PI) / ARM_CPR) * ticks; // rad per tick * ticks per second
         return angleUnit.fromRadians(thetaDot);
     }
 
-    private double ticksToMeters(double ticks) {
+    private static double ticksToMeters(double ticks) {
         return ticksToDistance(ticks, DistanceUnit.METER);
     }
 
-    private double ticksToDistance(double ticks, DistanceUnit distanceUnit) {
+    private static double ticksToDistance(double ticks, DistanceUnit distanceUnit) {
         double distance = (ticks/WHEEL_CPR)*(WHEEL_DIAMETER*Math.PI);
         return distanceUnit.fromMeters(distance);
     }
 
-    private double metersToTicks(double meters) {
+    private static double metersToTicks(double meters) {
         return distanceToTicks(meters, DistanceUnit.METER);
     }
 
-    private double distanceToTicks(double distance, DistanceUnit distanceUnit) {
+    private static double distanceToTicks(double distance, DistanceUnit distanceUnit) {
         distance = distanceUnit.toMeters(distance);
         return distance/(WHEEL_DIAMETER*Math.PI)*WHEEL_CPR;
     }
