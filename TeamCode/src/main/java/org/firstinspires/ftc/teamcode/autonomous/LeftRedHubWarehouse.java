@@ -100,7 +100,8 @@ public class LeftRedHubWarehouse extends OpMode
     private double armTargetRaw;
     private Manipulator.ArmPosition lastArmPosition = Manipulator.ArmPosition.UNKNOWN;
     private Manipulator.ArmPosition armPosition = Manipulator.ArmPosition.UNKNOWN;
-    private ProfileTrapezoidal trap;
+    private ProfileTrapezoidal trap = new ProfileTrapezoidal(2000, 4000); // cruise speed, acceleration TODO adjust these
+
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
     private ObjDetect objDetect;
@@ -227,8 +228,8 @@ public class LeftRedHubWarehouse extends OpMode
         telemetry.addData("ENCODER", wheelEncoder);
         switch (autonomousState) {
             case EXIT_START:
-                leftPower = 1;
-                rightPower = 1;
+                leftPower = 0.75;
+                rightPower = 0.75;
                 if (rearCm > 35) {
                     leftPower = 0;
                     rightPower = 0;
@@ -251,11 +252,11 @@ public class LeftRedHubWarehouse extends OpMode
                 rightPower = 0.75;
                 int target;
                 if (position == Manipulator.ArmPosition.MIDDLE)
-                    target = 350 - 32;
+                    target = 275 - 32;
                 else if (position == Manipulator.ArmPosition.BOTTOM)
-                    target = 350 - 64;
+                    target = 275 - 64;
                 else
-                    target = 350;
+                    target = 275;
                 if (wheelEncoder >= target) {
                     runtime.reset();
                     autonomousState = State.DROP_BLOCK;
@@ -297,7 +298,7 @@ public class LeftRedHubWarehouse extends OpMode
             case DRIVE_WAREHOUSE:
                 leftPower = -1;
                 rightPower = -1;
-                if (rearCm <= 20 || runtime.seconds() > 10) {
+                if (rearCm <= 20 || runtime.seconds() > 7) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;

@@ -95,10 +95,12 @@ public class RightRedHubWarehouse extends OpMode
     private boolean lastArmLimitState;
     private boolean armLimitState;
 
+
     private double armTargetRaw;
     private Manipulator.ArmPosition lastArmPosition = Manipulator.ArmPosition.UNKNOWN;
     private Manipulator.ArmPosition armPosition = Manipulator.ArmPosition.UNKNOWN;
-    private ProfileTrapezoidal trap;
+    private ProfileTrapezoidal trap = new ProfileTrapezoidal(2000, 4000); // cruise speed, acceleration TODO adjust these
+
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
     private ObjDetect objDetect;
@@ -133,6 +135,7 @@ public class RightRedHubWarehouse extends OpMode
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setDirection(DcMotor.Direction.FORWARD);
+        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
         clawRight.setDirection(DcMotor.Direction.REVERSE);
         clawLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         clawRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -207,7 +210,7 @@ public class RightRedHubWarehouse extends OpMode
      */
     @Override
     public void loop() {
-        int armEncoder = armLift.getCurrentPosition();
+        //int armEncoder = armLift.getCurrentPosition();
         armLimitState = armLimit.getState();
         double leftPower = 0;
         double rightPower = 0;
@@ -248,15 +251,15 @@ public class RightRedHubWarehouse extends OpMode
                 }
                 break;
             case DRIVE_FORWARDS:
-                leftPower = 0.75;
-                rightPower = 0.75;
+                leftPower = 0.5;
+                rightPower = 0.5;
                 int target;
                 if (position == Manipulator.ArmPosition.MIDDLE)
-                    target = 220;
+                    target = 220-75;
                 else if (position == Manipulator.ArmPosition.BOTTOM)
-                    target = 200;
+                    target = 200-75;
                 else
-                    target = 280;
+                    target = 280-75;
                 if (encoder >= target) {
                     runtime.reset();
                     autonomousState = State.DROP_BLOCK;
@@ -284,12 +287,12 @@ public class RightRedHubWarehouse extends OpMode
                 }
                 break;
             case TURN_WAREHOUSE:
-                leftPower = -0.75;
+                leftPower = -1;
                 rightPower = 0;
                 if (angle >= 75) {
                     leftPower = 0;
                     rightPower = 0;
-                    armPosition = Manipulator.ArmPosition.BOTTOM;
+                    armPosition = Manipulator.ArmPosition.MIDDLE;
                     armTargetRaw = armPosition.encoderTicks;
                     runtime.reset();
                     autonomousState = State.DRIVE_WAREHOUSE;
@@ -298,7 +301,7 @@ public class RightRedHubWarehouse extends OpMode
             case DRIVE_WAREHOUSE:
                 leftPower = -1;
                 rightPower = -1;
-                if (rearCm <= 20 || runtime.seconds() > 10) {
+                if (rearCm <= 20 || runtime.seconds() > 7) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;
@@ -350,7 +353,6 @@ public class RightRedHubWarehouse extends OpMode
         }
 
         lastArmLimitState = armLimitState;
-
 
     }
 

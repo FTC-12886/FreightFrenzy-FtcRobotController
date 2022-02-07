@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -18,7 +20,7 @@ import java.util.List;
 
 @TeleOp(name="Enhanced TeleOp")
 public class EnhancedTeleOp extends OpMode {
-
+    private final MultipleTelemetry telemetry = new MultipleTelemetry(super.telemetry, FtcDashboard.getInstance().getTelemetry());
     private final ElapsedTime runtime = new ElapsedTime();
     private DcMotorEx rearRightDrive = null;
     private DcMotorEx rearLeftDrive = null;
@@ -43,6 +45,8 @@ public class EnhancedTeleOp extends OpMode {
 
     private final SmoothDelay rightStickSmoothDelay = new SmoothDelay(1);
     private final SmoothDelay leftStickSmoothDelay = new SmoothDelay(1);
+
+    public static double TURN_SCALE_FACTOR = 1;
     @Override
     public void init() {
         telemetry.addData("Status", "Initializing");
@@ -100,6 +104,10 @@ public class EnhancedTeleOp extends OpMode {
         frontRightDrive.setDirection(DcMotor.Direction.REVERSE);
         frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
 
+        rearRightDrive.setVelocityPIDFCoefficients(10, 3, 0, 0.00029574);
+        rearLeftDrive.setVelocityPIDFCoefficients(10, 3, 0, 0.00029574);
+        frontRightDrive.setVelocityPIDFCoefficients(10, 3, 0, 0.00029574);
+        frontLeftDrive.setVelocityPIDFCoefficients(10, 3, 0, 0.00029574);
         // set PID gains
         armLift.setVelocityPIDFCoefficients(20, 3, 2,0); // stability limit is p = 40; reduce p or apply damping
         PIDFCoefficients velocityGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -132,7 +140,7 @@ public class EnhancedTeleOp extends OpMode {
         // POV Mode uses left stick to go forward, and right stick to turn.
         // apply smooth delay
         double leftStickY = leftStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
-        double rightStickX = rightStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
+        double rightStickX = rightStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x)*0.85;
         // calculate drive and turn
         double drive = -leftStickY*Math.abs(leftStickY);
         double turn  =  rightStickX*Math.abs(rightStickX);
@@ -212,8 +220,9 @@ public class EnhancedTeleOp extends OpMode {
         telemetry.addData("armTargetRaw", (int) armTargetRaw);
         telemetry.addData("armTargetSmooth", armTargetSmooth);
         telemetry.addData("arm state", armPosition);
+        telemetry.addData("arm limit", armLimitState ? 0 : 1);
         telemetry.addData("dt", (int) dt.time());
-        dt.reset();
+        telemetry.update();
 
         // don't send commands to motor if we are resetting encoder
         if (armLimitState && !lastArmLimitState) { // when switch not on and last state is on
@@ -226,6 +235,8 @@ public class EnhancedTeleOp extends OpMode {
 
         lastArmPosition = armPosition;
         lastArmLimitState = armLimitState;
+        dt.reset();
+
     }
     private char getGamepadButtons(Gamepad gamepad) {
         if (gamepad.a) {

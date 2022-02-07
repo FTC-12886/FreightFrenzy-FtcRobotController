@@ -101,7 +101,8 @@ public class RightBlueHubWarehouse extends OpMode
     private double armTargetRaw;
     private Manipulator.ArmPosition lastArmPosition = Manipulator.ArmPosition.UNKNOWN;
     private Manipulator.ArmPosition armPosition = Manipulator.ArmPosition.UNKNOWN;
-    private ProfileTrapezoidal trap;
+    private ProfileTrapezoidal trap = new ProfileTrapezoidal(2000, 4000); // cruise speed, acceleration TODO adjust these
+
     private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
     private ObjDetect objDetect;
@@ -219,11 +220,13 @@ public class RightBlueHubWarehouse extends OpMode
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         double angle = angles.firstAngle;
         double rearCm = rearDistance.getDistance(DistanceUnit.CM);
-
+        double encoder = frontRightDrive.getCurrentPosition();
 
         telemetry.addData("DISTANCE", rearCm);
         telemetry.addData("STATE", autonomousState);
         telemetry.addData("ANGLE", angle);
+        telemetry.addData("ENCODER", encoder);
+
         switch (autonomousState) {
             case EXIT_START:
                 leftPower = 1;
@@ -287,7 +290,7 @@ public class RightBlueHubWarehouse extends OpMode
             case DRIVE_WAREHOUSE:
                 leftPower = -1;
                 rightPower = -1;
-                if (rearCm <= 30 || runtime.seconds() > 10) {
+                if (rearCm <= 30 || runtime.seconds() > 7) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;

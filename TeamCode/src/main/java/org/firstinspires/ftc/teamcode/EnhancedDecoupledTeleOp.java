@@ -118,6 +118,11 @@ public class EnhancedDecoupledTeleOp extends OpMode {
         frontRightDrive.setDirection(DcMotor.Direction.REVERSE);
         frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
 
+        rearRightDrive.setVelocityPIDFCoefficients(10, 3, 0, 0.00029574);
+        rearLeftDrive.setVelocityPIDFCoefficients(10, 3, 0, 0.00029574);
+        frontRightDrive.setVelocityPIDFCoefficients(10, 3, 0, 0.00029574);
+        frontLeftDrive.setVelocityPIDFCoefficients(10, 3, 0, 0.00029574);
+
         // set PID gains
         armLift.setVelocityPIDFCoefficients(20, 3, 2,0); // stability limit is p = 40; reduce p or apply damping
         PIDFCoefficients velocityGains = armLift.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -222,7 +227,7 @@ public class EnhancedDecoupledTeleOp extends OpMode {
         // POV Mode uses left stick to go forward, and right stick to turn.
         // apply smooth delay
         double leftStickY = leftStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.left_stick_y);
-        double rightStickX = rightStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x);
+        double rightStickX = rightStickSmoothDelay.profileSmoothDelaySmooth(gamepad1.right_stick_x)*0.85;
 
         // calculate drive and turn in m/s, adjust for fast mode to get "real velocity"
         double drive = -leftStickY*Math.abs(leftStickY)*MAX_VELOCITY_MPS*fastMode;

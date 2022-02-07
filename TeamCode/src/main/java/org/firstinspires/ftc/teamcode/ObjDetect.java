@@ -58,8 +58,8 @@ import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 public class ObjDetect {
     public static double RIGHT_BOUNDARY = 0.67;
     public static double LEFT_BOUNDARY = 0.33;
-    public static double WIDTH_IGNORE = 0.25;
-    public static double HEIGHT_IGNORE = 0.5;
+    public static double WIDTH_IGNORE = 1;
+    public static double HEIGHT_IGNORE = 1;
 
     private final TFObjectDetector tfod;
     private ProcessingParameters processingParameters;
