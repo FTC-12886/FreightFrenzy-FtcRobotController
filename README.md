@@ -9,14 +9,19 @@ This repository contains the public FTC SDK for the Freight Frenzy (2021-2022) c
 ## [INSTRUCTIONS] Coding with Android Studio
 1. Install [Android Studio](https://developer.android.com/studio). You may need to install it to your user's applications folder `~/Applications/`.
 2. Open Android Studio
-3. Click "Get from VCS" and paste this repository's link (https://github.com/ToothbrushB/FtcRobotController)
-4. Wait for the project to load
-5. Make any code changes necessary
-6. Connect to the robot Wi-Fi network
-7. Open the "Terminal" tab at the bottom
-8. Type in `~/Library/Android/sdk/platform-tools/adb connect 192.168.43.1:5555` to connect to the robot. You can change "connect" to "reconnect" or "disconnect" if you ever need to fix the connection to the robot
-9. In the top bar, you should see something that says "REV Control Hub", click the play icon or play icon with arrow to build and deploy the new code. If Android Studio prompts you to uninstall the current app because of a signature mismatch, allow it to uninstall the app for you.
-10. You can track build status in the bottom right corner
+3. Click "Get from VCS" and paste this repository's link (https://github.com/ToothbrushB/FtcRobotController.git). Trust the Gradle project when prompted. You can ignore the tip of the day (click close).
+4. Wait for the project to load. Since it's your first time opening the project, it might take a while. Wait until the status bar in the bottom right corner goes away, indicating Android Studio is done setting up.
+5. Make any code changes necessary. Use the "Project" pane on the left of the screen to navigate between files. You should only need to use the "TeamCode" module.
+6. Press the hammer in the top right-ish corner to build the project (see picture below). The first build take a little bit, so be patient. Make sure you are connected to a network with internet connectivity just in case Gradle needs to download any dependencies.
+7. Connect to the robot Wi-Fi network. The network info can be found on page 99 of the raw notes or on the "Program and Manage" section of the driver phone
+8. Open the "Terminal" tab at the bottom
+9. Type in `~/Library/Android/sdk/platform-tools/adb connect 192.168.43.1:5555` and press enter to connect to the robot. You can change "connect" to "reconnect" or "disconnect" if you ever need to fix the connection to the robot
+10. In the top bar, you should see something that says "REV Control Hub", click the play icon or play icon with arrow to build and deploy the new code. If Android Studio prompts you to uninstall the current app because of a signature mismatch, allow it to uninstall the app for you.
+<p align="center">
+	<img width="309" alt="Screen Shot 2022-02-08 at 10 42 45 PM" src="https://user-images.githubusercontent.com/49379586/153123599-b4937d63-49b0-4e33-8004-0967aa807f89.png">
+</p>
+11. You can track build status in the bottom right corner
+12. To deploy new code, just press the run/re-run button again (same button as in step 10). 
 
 ## Welcome!
 This GitHub repository contains the source code that is used to build an Android app to control a *FIRST* Tech Challenge competition robot.  To use this SDK, download/clone the entire project to your local computer.
