@@ -6,6 +6,18 @@ The following is the original README.md file:
 
 This repository contains the public FTC SDK for the Freight Frenzy (2021-2022) competition season. 
 
+## [INSTRUCTIONS] Coding with Android Studio
+1. Install [Android Studio](https://developer.android.com/studio). You may need to install it to your user's applications folder `~/Applications/`.
+2. Open Android Studio
+3. Click "Get from VCS" and paste this repository's link (https://github.com/ToothbrushB/FtcRobotController)
+4. Wait for the project to load
+5. Make any code changes necessary
+6. Connect to the robot Wi-Fi network
+7. Open the "Terminal" tab at the bottom
+8. Type in `~/Library/Android/sdk/platform-tools/adb connect 192.168.43.1:5555` to connect to the robot. You can change "connect" to "reconnect" or "disconnect" if you ever need to fix the connection to the robot
+9. In the top bar, you should see something that says "REV Control Hub", click the play icon or play icon with arrow to build and deploy the new code
+10. You can track build status in the bottom right corner
+
 ## Welcome!
 This GitHub repository contains the source code that is used to build an Android app to control a *FIRST* Tech Challenge competition robot.  To use this SDK, download/clone the entire project to your local computer.
 
