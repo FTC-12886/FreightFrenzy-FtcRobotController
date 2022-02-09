@@ -15,7 +15,7 @@ This repository contains the public FTC SDK for the Freight Frenzy (2021-2022) c
 6. Connect to the robot Wi-Fi network
 7. Open the "Terminal" tab at the bottom
 8. Type in `~/Library/Android/sdk/platform-tools/adb connect 192.168.43.1:5555` to connect to the robot. You can change "connect" to "reconnect" or "disconnect" if you ever need to fix the connection to the robot
-9. In the top bar, you should see something that says "REV Control Hub", click the play icon or play icon with arrow to build and deploy the new code
+9. In the top bar, you should see something that says "REV Control Hub", click the play icon or play icon with arrow to build and deploy the new code. If Android Studio prompts you to uninstall the current app because of a signature mismatch, allow it to uninstall the app for you.
 10. You can track build status in the bottom right corner
 
 ## Welcome!
