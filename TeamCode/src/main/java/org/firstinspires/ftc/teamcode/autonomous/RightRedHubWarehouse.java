@@ -277,8 +277,8 @@ public class RightRedHubWarehouse extends OpMode
                 }
                 break;
             case DRIVE_REVERSE:
-                leftPower = -1;
-                rightPower = -1;
+                leftPower = -1.5;
+                rightPower = -1.5;
                 if (encoder <= -250) {
                     leftPower = 0;
                     rightPower = 0;
@@ -287,7 +287,7 @@ public class RightRedHubWarehouse extends OpMode
                 }
                 break;
             case TURN_WAREHOUSE:
-                leftPower = -1;
+                leftPower = -1.5;
                 rightPower = 0;
                 if (angle >= 75) {
                     leftPower = 0;
@@ -299,18 +299,9 @@ public class RightRedHubWarehouse extends OpMode
                 }
                 break;
             case DRIVE_WAREHOUSE:
-                leftPower = -1;
-                rightPower = -1;
-                if (rearCm <= 20 || runtime.seconds() > 7) {
-                    leftPower = 0;
-                    rightPower = 0;
-                    autonomousState = State.END;
-                }
-                break;
-            case TURN_END:
-                leftPower = 0;
-                rightPower = 0.5;
-                if (angle >= 185) {
+                leftPower = Math.min(rearCm / -50.0, 1.25);
+                rightPower = Math.min(rearCm / -50.0, 1.25);
+                if ((rearCm <= 20 || runtime.seconds() > 7) && runtime.seconds() > 2) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;
@@ -326,8 +317,8 @@ public class RightRedHubWarehouse extends OpMode
         rearRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        leftPower *= 0.6;
-        rightPower *= 0.6;
+        leftPower *= 0.5;
+        rightPower *= 0.5;
         rearLeftDrive.setPower(leftPower);
         rearRightDrive.setPower(rightPower);
         frontLeftDrive.setPower(leftPower);

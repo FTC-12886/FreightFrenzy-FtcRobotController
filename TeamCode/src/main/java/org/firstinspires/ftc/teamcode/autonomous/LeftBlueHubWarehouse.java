@@ -223,7 +223,7 @@ public class LeftBlueHubWarehouse extends OpMode
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         double angle = angles.firstAngle;
         double rearCm = rearDistance.getDistance(DistanceUnit.CM);
-        double encoder = frontRightDrive.getCurrentPosition();
+        double encoder = frontLeftDrive.getCurrentPosition();
 
         telemetry.addData("DISTANCE", rearCm);
         telemetry.addData("STATE", autonomousState);
@@ -248,6 +248,7 @@ public class LeftBlueHubWarehouse extends OpMode
                     rightPower = 0;
                     runtime.reset();
                     autonomousState = State.DRIVE_FORWARDS;
+                    frontLeftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 }
                 break;
             case DRIVE_FORWARDS:
@@ -273,12 +274,13 @@ public class LeftBlueHubWarehouse extends OpMode
                     clawRightPower = 0;
                     runtime.reset();
                     autonomousState = State.DRIVE_REVERSE;
+                    frontLeftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 }
                 break;
             case DRIVE_REVERSE:
-                leftPower = -1;
-                rightPower = -1;
-                if (runtime.milliseconds() >= 500) {
+                leftPower = -1.5;
+                rightPower = -1.5;
+                if (encoder <= -250) {
                     leftPower = 0;
                     rightPower = 0;
                     runtime.reset();
@@ -287,7 +289,7 @@ public class LeftBlueHubWarehouse extends OpMode
                 break;
             case TURN_WAREHOUSE:
                 leftPower = 0.00;
-                rightPower = -0.75;
+                rightPower = -1.5;
                 if (angle <= -85) {
                     leftPower = 0;
                     rightPower = 0;
@@ -298,9 +300,9 @@ public class LeftBlueHubWarehouse extends OpMode
                 }
                 break;
             case DRIVE_WAREHOUSE:
-                leftPower = -1;
-                rightPower = -1;
-                if (rearCm <= 30 || runtime.seconds() > 7) {
+                leftPower = Math.min(rearCm / -50.0, 1.25);
+                rightPower = Math.min(rearCm / -50.0, 1.25);
+                if ((rearCm <= 20 || runtime.seconds() > 7) && runtime.seconds() > 2) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;
@@ -316,8 +318,8 @@ public class LeftBlueHubWarehouse extends OpMode
         rearRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        leftPower *= 0.6;
-        rightPower *= 0.6;
+        leftPower *= 0.5;
+        rightPower *= 0.5;
         rearLeftDrive.setPower(leftPower);
         rearRightDrive.setPower(rightPower);
         frontLeftDrive.setPower(leftPower);
