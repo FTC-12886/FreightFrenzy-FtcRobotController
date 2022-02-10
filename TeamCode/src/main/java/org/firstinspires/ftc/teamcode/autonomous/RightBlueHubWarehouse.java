@@ -297,9 +297,14 @@ public class RightBlueHubWarehouse extends OpMode
                 }
                 break;
             case DRIVE_WAREHOUSE:
-                leftPower = Math.min(rearCm / -50.0, 1.25);
-                rightPower = Math.min(rearCm / -50.0, 1.25);
-                if ((rearCm <= 20 || runtime.seconds() > 7) && runtime.seconds() > 2) {
+                double angleError = angle - 85;
+                double distanceError = rearCm - 20;
+                leftPower = -1+angleError*0.067;
+                rightPower = -1-angleError*0.067;
+                // scale power by distance error
+                leftPower *= Math.min(distanceError / -35.0, 1.25);
+                rightPower *= Math.min(distanceError / -35.0, 1.25);
+                if ((rearCm <= 20 || runtime.seconds() > 7) && runtime.seconds() > 2) { // ignore the first 2 seconds (distance sensor errors)
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.END;
