@@ -256,7 +256,7 @@ public class LeftRedHubWarehouse extends OpMode
                 else if (position == Manipulator.ArmPosition.BOTTOM)
                     target = 275 - 64;
                 else
-                    target = 290;
+                    target = 315;
                 if (wheelEncoder >= target) {
                     runtime.reset();
                     autonomousState = State.DROP_BLOCK;
@@ -300,9 +300,10 @@ public class LeftRedHubWarehouse extends OpMode
                 double distanceError = rearCm - 20;
                 leftPower = -1+angleError*0.067;
                 rightPower = -1-angleError*0.067;
+                rightPower = leftPower = 1;
                 // scale power by distance error
-                leftPower *= Math.min(distanceError / -35.0, 1.25);
-                rightPower *= Math.min(distanceError / -35.0, 1.25);
+                leftPower *= Math.max(distanceError / -35.0, -1.5);
+                rightPower *= Math.max(distanceError / -35.0, -1.5);
                 if ((rearCm <= 20 || runtime.seconds() > 7) && runtime.seconds() > 2) { // ignore the first 2 seconds (distance sensor errors)
                     leftPower = 0;
                     rightPower = 0;
@@ -400,7 +401,6 @@ public class LeftRedHubWarehouse extends OpMode
         DROP_BLOCK,
         TURN_WAREHOUSE,
         DRIVE_WAREHOUSE,
-        TURN_END,
         DRIVE_REVERSE,
         END
     }

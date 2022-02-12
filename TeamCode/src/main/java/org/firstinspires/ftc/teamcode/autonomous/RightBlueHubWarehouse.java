@@ -209,13 +209,13 @@ public class RightBlueHubWarehouse extends OpMode
      */
     @Override
     public void loop() {
-        int armEncoder = armLift.getCurrentPosition();
+        //int armEncoder = armLift.getCurrentPosition();
         armLimitState = armLimit.getState();
         double leftPower = 0;
         double rightPower = 0;
         double clawLeftPower = 0;
         double clawRightPower = 0;
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Status", "Run Time: " + runtime);
 
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         double angle = angles.firstAngle;
@@ -231,7 +231,7 @@ public class RightBlueHubWarehouse extends OpMode
             case EXIT_START:
                 leftPower = 0.75;
                 rightPower = 0.75;
-                if (rearCm > 35) {
+                if (rearCm > 30) {
                     leftPower = 0;
                     rightPower = 0;
                     autonomousState = State.TURN_HUB;
@@ -257,7 +257,7 @@ public class RightBlueHubWarehouse extends OpMode
                 else if (position == Manipulator.ArmPosition.BOTTOM)
                     target = 275 - 64;
                 else
-                    target = 275;
+                    target = 315;
                 if (wheelEncoder >= target) {
                     runtime.reset();
                     autonomousState = State.DROP_BLOCK;
@@ -297,13 +297,14 @@ public class RightBlueHubWarehouse extends OpMode
                 }
                 break;
             case DRIVE_WAREHOUSE:
-                double angleError = angle - 85;
+                double angleError = angle - -85;
                 double distanceError = rearCm - 20;
                 leftPower = -1+angleError*0.067;
                 rightPower = -1-angleError*0.067;
+                rightPower = leftPower = 1;
                 // scale power by distance error
-                leftPower *= Math.min(distanceError / -35.0, 1.25);
-                rightPower *= Math.min(distanceError / -35.0, 1.25);
+                leftPower *= Math.max(distanceError / -35.0, -1.5);
+                rightPower *= Math.max(distanceError / -35.0, -1.5);
                 if ((rearCm <= 20 || runtime.seconds() > 7) && runtime.seconds() > 2) { // ignore the first 2 seconds (distance sensor errors)
                     leftPower = 0;
                     rightPower = 0;

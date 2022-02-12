@@ -129,13 +129,13 @@ public class RightRedHubWarehouse extends OpMode
         clawLeft = hardwareMap.get(DcMotor.class, "claw_left");
         clawRight = hardwareMap.get(DcMotor.class, "claw_right");
 
-//        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
-//        armLimit.setMode(DigitalChannel.Mode.INPUT);
+        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
+        armLimit.setMode(DigitalChannel.Mode.INPUT);
 
 
         armLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armLift.setDirection(DcMotor.Direction.FORWARD);
-        armLimit = hardwareMap.get(DigitalChannel.class, "arm_limit");
+
         clawRight.setDirection(DcMotor.Direction.REVERSE);
         clawLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         clawRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -299,8 +299,10 @@ public class RightRedHubWarehouse extends OpMode
                 }
                 break;
             case DRIVE_WAREHOUSE:
-                leftPower = Math.min(rearCm / -50.0, 1.25);
-                rightPower = Math.min(rearCm / -50.0, 1.25);
+                double distanceError = rearCm - 20;
+                rightPower = leftPower = 1;
+                leftPower *= Math.max(distanceError / -35.0, -1.5);
+                rightPower *= Math.max(distanceError / -35.0, -1.5);
                 if ((rearCm <= 20 || runtime.seconds() > 7) && runtime.seconds() > 2) {
                     leftPower = 0;
                     rightPower = 0;
@@ -398,7 +400,6 @@ public class RightRedHubWarehouse extends OpMode
         DROP_BLOCK,
         TURN_WAREHOUSE,
         DRIVE_WAREHOUSE,
-        TURN_END,
         DRIVE_REVERSE,
         END
     }

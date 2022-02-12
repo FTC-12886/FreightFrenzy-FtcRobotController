@@ -36,6 +36,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.State;
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -72,7 +73,7 @@ import java.util.List;
  */
 
 @Autonomous(name="left red, storage, park warehouse", group="Red", preselectTeleOp = "Enhanced TeleOp")
-
+@Disabled
 public class LeftRedStorageWarehouse extends OpMode
 {
     // Declare OpMode members.
