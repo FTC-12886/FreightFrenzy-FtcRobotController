@@ -85,5 +85,3 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
-.DS_Store
-.idea/deploymentTargetDropDown.xml
