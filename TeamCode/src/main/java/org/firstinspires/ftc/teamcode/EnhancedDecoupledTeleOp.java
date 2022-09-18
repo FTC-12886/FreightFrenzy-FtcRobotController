@@ -34,13 +34,12 @@ public class EnhancedDecoupledTeleOp extends OpMode {
 
     private DigitalChannel armLimit;
     private boolean lastArmLimitState;
-    private boolean armLimitState;
 
     private double armTargetRaw;
     private Manipulator.ArmPosition lastArmPosition = Manipulator.ArmPosition.UNKNOWN;
     private Manipulator.ArmPosition armPosition = Manipulator.ArmPosition.UNKNOWN;
     private ProfileTrapezoidal trap;
-    private ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+    private final ElapsedTime dt = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
     private final SmoothDelay rightStickSmoothDelay = new SmoothDelay(1);
     private final SmoothDelay leftStickSmoothDelay = new SmoothDelay(1);
@@ -145,8 +144,8 @@ public class EnhancedDecoupledTeleOp extends OpMode {
     @Override
     public void loop() {
         int armEncoder = armLift.getCurrentPosition();
-        armLimitState = armLimit.getState();
-                telemetry.addData("arm pos", armEncoder);
+        boolean armLimitState = armLimit.getState();
+        telemetry.addData("arm pos", armEncoder);
 
         // both triggers = duck mode
         if (gamepad1.right_trigger > 0.00 && gamepad1.left_trigger > 0.00) {
